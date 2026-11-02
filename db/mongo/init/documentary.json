@@ -1,0 +1,40 @@
+{
+    "_id": {"$oid": "65f1a2b3c4d5e6f708192a03"},
+    "_class": "content",
+    "version": {"$numberLong": "0"},
+    "type": "DOCUMENTARY",
+    "status": "DRAFT",
+    "title": "Voces del Pacífico",
+    "titleNormalized": "voces del pacifico",
+    "synopsis": "Un recorrido por las comunidades costeras que preservan la música y la memoria oral del litoral.",
+    "year": 2024,
+    "ageRating": 0,
+    "posterUrl": "https://example.com/posters/voces-del-pacifico.jpg",
+    "genres": ["documental", "musica"],
+    "countries": ["CO", "EC"],
+    "audioLanguages": ["es"],
+    "subtitleLanguages": ["en", "fr"],
+    "schemaVersion": 1,
+    "createdAt": {"$date": "2026-11-04T11:00:00Z"},
+    "updatedAt": {"$date": "2026-11-04T11:00:00Z"},
+    "documentary": {
+        "durationSeconds": 4980,
+            "directors": [
+            "Andrés Valencia",
+            "Rosa Cuero"
+        ],
+            "topics": [
+            "música tradicional",
+            "memoria oral",
+            "identidad afrocolombiana"
+        ],
+            "interviewees": [
+            "Doña Etelvina Mosquera",
+            "Maestro Lisandro Caicedo"
+        ],
+            "sources": [
+            "Universidad del Pacífico",
+            "Archivo Sonoro del Litoral"
+        ]
+    }
+}
