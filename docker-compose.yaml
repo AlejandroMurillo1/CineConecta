@@ -1,0 +1,45 @@
+name: cineconecta
+
+services:
+  postgres:
+    image: postgres:17
+    container_name: cineconecta-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-cineconecta}
+      POSTGRES_USER: ${POSTGRES_USER:-cine}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cine}
+      TZ: UTC
+      PGTZ: UTC
+    ports:
+      - "127.0.0.1:5432:5432"          # solo accesible desde tu propia máquina
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./db/postgres:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  mongo:
+    image: mongo:8
+    container_name: cineconecta-mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: ${MONGO_DB:-cineconecta}
+    ports:
+      - "127.0.0.1:27017:27017"        # solo accesible desde tu propia máquina
+    volumes:
+      - mongo-data:/data/db
+      - ./db/mongo/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  postgres-data:
+  mongo-data:
+  
