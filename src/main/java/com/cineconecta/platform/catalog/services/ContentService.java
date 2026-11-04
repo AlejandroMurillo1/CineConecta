@@ -1,4 +1,4 @@
-package com.cineconecta.platform.catalog.service;
+package com.cineconecta.platform.catalog.services;
 
 import org.springframework.stereotype.Service;
 

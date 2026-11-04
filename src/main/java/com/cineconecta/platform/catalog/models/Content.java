@@ -1,4 +1,4 @@
-package com.cineconecta.platform.catalog.model;
+package com.cineconecta.platform.catalog.models;
 
 import com.cineconecta.platform.catalog.ContentStatus;
 import com.cineconecta.platform.catalog.ContentType;
