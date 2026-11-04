@@ -41,7 +41,5 @@ public class Content {
     private Instant createdAt;
     private Instant updatedAt;
 
-    private MovieDetails movie;
-    private SeriesDetails series;
-    private DocumentaryDetails documentary;
+    private ContentDetails contentDetails;
 }
