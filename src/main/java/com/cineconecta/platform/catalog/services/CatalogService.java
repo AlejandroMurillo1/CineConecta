@@ -8,11 +8,9 @@ import com.cineconecta.platform.catalog.repositories.ContentRepository;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Service
 @Getter
@@ -21,19 +19,26 @@ public class CatalogService {
     private final Map<ContentType, ContentMappingStrategy> mappingStrategies;
 
     @Autowired
-    public CatalogService(List<ContentMappingStrategy> mappingStrategies, ContentRepository contentRepository) {
+    public CatalogService(Map<ContentType, ContentMappingStrategy> mappingStrategies, ContentRepository contentRepository) {
         this.contentRepository = contentRepository;
-        this.mappingStrategies = mappingStrategies.stream()
-                .collect(Collectors.toMap(ContentMappingStrategy::getSupportedType, Function.identity()));
+        this.mappingStrategies = mappingStrategies;
     }
 
+    @Transactional
     public Content createContent(final CreateContentCommand command) {
         ContentMappingStrategy strategy = mappingStrategies.get(command.getType());
 
         if (strategy == null) {
             throw new UnsupportedOperationException("No existe estrategia de mapeo para el tipo: " + command.getType().toString());
         }
+
         Content content = strategy.mapToDomain(command);
-        return contentRepository.save(content);
+        boolean exists = contentRepository.findByTitleNormalized(content.getTitleNormalized()).isPresent();
+
+        if(!exists) {
+            return contentRepository.save(content);
+        }
+
+        throw new IllegalStateException("Content with title " + content.getTitleNormalized() + " already exists.");
     }
 }

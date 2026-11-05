@@ -25,9 +25,9 @@ public class SeriesMappingStrategy implements ContentMappingStrategy{
 
     @Override
     public Content mapToDomain(CreateContentCommand command) {
-        if (!(command instanceof CreateSeriesCommand(
-                ContentMetadata metadata, List<CreateSeasonDto> seasons1
-        ))) {
+        if (!(command instanceof
+                CreateSeriesCommand(ContentMetadata metadata, List<CreateSeasonDto> seasons1)
+        )) {
             throw new IllegalArgumentException("Comando no soportado por SeriesMapperStrategy");
         }
 
