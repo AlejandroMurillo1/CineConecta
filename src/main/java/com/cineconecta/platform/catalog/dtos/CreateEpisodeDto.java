@@ -8,4 +8,9 @@ public record CreateEpisodeDto(
         @NotBlank String title,
         @NotBlank String synopsis,
         @Positive int durationSeconds
-) {}
+) {
+    public CreateEpisodeDto {
+        title = DtoLists.strip(title);
+        synopsis = DtoLists.strip(synopsis);
+    }
+}

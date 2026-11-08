@@ -2,43 +2,53 @@ package com.cineconecta.platform.catalog.services;
 
 import com.cineconecta.platform.catalog.ContentType;
 import com.cineconecta.platform.catalog.dtos.CreateContentCommand;
-import com.cineconecta.platform.catalog.mapping.ContentMappingStrategy;
+import com.cineconecta.platform.catalog.exceptions.DuplicateContentException;
+import com.cineconecta.platform.catalog.mappings.ContentMappingStrategy;
 import com.cineconecta.platform.catalog.models.Content;
 import com.cineconecta.platform.catalog.repositories.ContentRepository;
-import lombok.Getter;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
 
 import java.util.Map;
 
 @Service
-@Getter
+@Validated
 public class CatalogService {
+
     private final ContentRepository contentRepository;
     private final Map<ContentType, ContentMappingStrategy> mappingStrategies;
 
     @Autowired
-    public CatalogService(Map<ContentType, ContentMappingStrategy> mappingStrategies, ContentRepository contentRepository) {
-        this.contentRepository = contentRepository;
+    public CatalogService(Map<ContentType, ContentMappingStrategy> mappingStrategies,
+                          ContentRepository contentRepository) {
         this.mappingStrategies = mappingStrategies;
+        this.contentRepository = contentRepository;
     }
 
-    @Transactional
-    public Content createContent(final CreateContentCommand command) {
-        ContentMappingStrategy strategy = mappingStrategies.get(command.getType());
+    public Content createContent(@NotNull @Valid CreateContentCommand command) {
+        Content content = strategyFor(command.getType()).mapToDomain(command);
 
-        if (strategy == null) {
-            throw new UnsupportedOperationException("No existe estrategia de mapeo para el tipo: " + command.getType().toString());
+        if (contentRepository.existsByTitleNormalizedAndYear(content.getTitleNormalized(), content.getYear())) {
+            throw new DuplicateContentException(content.getTitle(), content.getYear());
         }
 
-        Content content = strategy.mapToDomain(command);
-        boolean exists = contentRepository.findByTitleNormalized(content.getTitleNormalized()).isPresent();
-
-        if(!exists) {
+        try {
             return contentRepository.save(content);
+        } catch (DuplicateKeyException e) {
+            // Solo ocurre si se activa el índice único ux_title_year (peticiones simultáneas).
+            throw new DuplicateContentException(content.getTitle(), content.getYear());
         }
+    }
 
-        throw new IllegalStateException("Content with title " + content.getTitleNormalized() + " already exists.");
+    private ContentMappingStrategy strategyFor(ContentType type) {
+        ContentMappingStrategy strategy = mappingStrategies.get(type);
+        if (strategy == null) {
+            throw new IllegalStateException("No existe estrategia de mapeo para el tipo: " + type);
+        }
+        return strategy;
     }
 }

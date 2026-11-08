@@ -1,8 +1,7 @@
 package com.cineconecta.platform.catalog.config;
 
 import com.cineconecta.platform.catalog.ContentType;
-import com.cineconecta.platform.catalog.mapping.ContentMappingStrategy;
-import com.cineconecta.platform.catalog.mapping.SeriesMappingStrategy;
+import com.cineconecta.platform.catalog.mappings.ContentMappingStrategy;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 

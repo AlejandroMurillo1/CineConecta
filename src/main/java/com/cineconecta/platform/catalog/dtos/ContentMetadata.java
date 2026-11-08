@@ -5,14 +5,27 @@ import jakarta.validation.constraints.*;
 import java.util.List;
 
 public record ContentMetadata(
-        @NotBlank String title,
-        @NotBlank String synopsis,
-        @Positive int year,
+        @NotBlank @Size(max = 200) String title,
+        @NotBlank @Size(max = 2000) String synopsis,
+        @Min(1888) @Max(2100) int year,
         @Min(0) @Max(18) int ageRating,
-        String posterUrl,
+        @NotBlank @Pattern(regexp = ContentMetadata.URL) String posterUrl,
         @NotEmpty List<String> genres,
-        @NotEmpty List<String> countries,
-        @NotEmpty List<String> audioLanguages,
-        List<String> subtitleLanguages
+        @NotEmpty List<@Pattern(regexp = ContentMetadata.COUNTRY) String> countries,
+        @NotEmpty List<@Pattern(regexp = ContentMetadata.LANGUAGE) String> audioLanguages,
+        List<@Pattern(regexp = ContentMetadata.LANGUAGE) String> subtitleLanguages
 ) {
+    static final String URL = "^https?://\\S+$";
+    static final String COUNTRY = "^[A-Z]{2}$";
+    static final String LANGUAGE = "^[a-z]{2,3}(-[A-Za-z]{2,4})?$";
+
+    public ContentMetadata {
+        title = DtoLists.strip(title);
+        synopsis = DtoLists.strip(synopsis);
+        posterUrl = DtoLists.strip(posterUrl);
+        genres = DtoLists.cleanTexts(genres);
+        countries = DtoLists.cleanTexts(countries);
+        audioLanguages = DtoLists.cleanTexts(audioLanguages);
+        subtitleLanguages = DtoLists.cleanTexts(subtitleLanguages);       // opcional: vacía si no viene
+    }
 }

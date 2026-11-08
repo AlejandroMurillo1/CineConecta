@@ -2,6 +2,7 @@ package com.cineconecta.platform.catalog.dtos;
 
 import com.cineconecta.platform.catalog.ContentType;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -16,6 +17,14 @@ public record CreateDocumentaryCommand(
         List<String> interviewees,
         List<String> sources
 ) implements CreateContentCommand {
+
+    public CreateDocumentaryCommand {
+        directors = DtoLists.cleanTexts(directors);
+        topics = DtoLists.cleanTexts(topics);
+        interviewees = DtoLists.cleanTexts(interviewees);   // opcional
+        sources = DtoLists.cleanTexts(sources);             // opcional
+    }
+
     @Override
     public ContentType getType() {
         return ContentType.DOCUMENTARY;

@@ -1,10 +1,10 @@
 package com.cineconecta.platform.catalog.models;
 
-import com.fasterxml.jackson.annotation.JsonTypeName;
+import org.springframework.data.annotation.TypeAlias;
 
 import java.util.List;
 
-@JsonTypeName("DOCUMENTARY")
+@TypeAlias("DOCUMENTARY")
 public record DocumentaryDetails (
         int durationSeconds,
         List<String> directors,
