@@ -1,5 +1,6 @@
 package com.cineconecta.platform.catalog.dtos;
 
+import com.cineconecta.platform.catalog.utils.DtoLists;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 

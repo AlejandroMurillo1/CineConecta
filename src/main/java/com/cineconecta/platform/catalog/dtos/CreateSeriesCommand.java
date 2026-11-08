@@ -1,6 +1,7 @@
 package com.cineconecta.platform.catalog.dtos;
 
 import com.cineconecta.platform.catalog.ContentType;
+import com.cineconecta.platform.catalog.utils.DtoLists;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 

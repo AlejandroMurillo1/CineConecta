@@ -6,6 +6,7 @@ import com.cineconecta.platform.catalog.dtos.ContentMetadata;
 import com.cineconecta.platform.catalog.dtos.CreateContentCommand;
 import com.cineconecta.platform.catalog.models.Content;
 import com.cineconecta.platform.catalog.models.ContentDetails;
+import com.cineconecta.platform.catalog.utils.TextNormalizer;
 
 import java.time.Instant;
 

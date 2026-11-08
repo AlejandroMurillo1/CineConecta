@@ -1,4 +1,4 @@
-package com.cineconecta.platform.catalog.mappings;
+package com.cineconecta.platform.catalog.utils;
 
 import java.text.Normalizer;
 import java.util.Locale;
