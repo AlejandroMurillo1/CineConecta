@@ -4,13 +4,13 @@ import com.cineconecta.platform.catalog.utils.DtoLists;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 
-public record CreateEpisodeDto(
+public record EpisodeDto(
         @Positive int number,
         @NotBlank String title,
         @NotBlank String synopsis,
         @Positive int durationSeconds
 ) {
-    public CreateEpisodeDto {
+    public EpisodeDto {
         title = DtoLists.strip(title);
         synopsis = DtoLists.strip(synopsis);
     }

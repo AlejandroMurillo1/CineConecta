@@ -9,12 +9,12 @@ import jakarta.validation.constraints.Positive;
 
 import java.util.List;
 
-public record CreateSeasonDto(
+public record SeasonDto(
         @Positive int number,
         @NotBlank String description,
-        @NotEmpty List<@Valid CreateEpisodeDto> episodes
+        @NotEmpty List<@Valid EpisodeDto> episodes
 ) {
-    public CreateSeasonDto {
+    public SeasonDto {
         description = DtoLists.strip(description);
         episodes = DtoLists.immutable(episodes);
     }
@@ -25,6 +25,6 @@ public record CreateSeasonDto(
      */
     @AssertTrue(message = "No pueden existir episodios con el mismo número en una temporada")
     public boolean isEpisodeNumbersUnique() {
-        return DtoLists.hasUniqueKeys(episodes, CreateEpisodeDto::number);
+        return DtoLists.hasUniqueKeys(episodes, EpisodeDto::number);
     }
 }
