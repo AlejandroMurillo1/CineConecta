@@ -11,6 +11,7 @@ import com.cineconecta.platform.catalog.models.SeriesDetails;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
@@ -22,6 +23,7 @@ import java.util.function.UnaryOperator;
 public class SeriesService {
     private final ContentStore store;
 
+    @Autowired
     public SeriesService(ContentStore store) {
         this.store = store;
     }

@@ -8,7 +8,6 @@ import com.cineconecta.platform.catalog.exceptions.DuplicateContentException;
 import com.cineconecta.platform.catalog.mappings.ContentMapper;
 import com.cineconecta.platform.catalog.mappings.ContentMappingStrategy;
 import com.cineconecta.platform.catalog.models.Content;
-import com.cineconecta.platform.catalog.repositories.ContentRepository;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -25,16 +24,12 @@ import java.util.Map;
 @Validated
 public class CatalogService {
 
-    private final ContentRepository contentRepository;
     private final ContentStore store;
     private final Map<ContentType, ContentMappingStrategy> mappingStrategies;
 
     @Autowired
-    public CatalogService(Map<ContentType, ContentMappingStrategy> mappingStrategies,
-                          ContentRepository contentRepository,
-                          ContentStore store) {
+    public CatalogService(Map<ContentType, ContentMappingStrategy> mappingStrategies, ContentStore store) {
         this.mappingStrategies = mappingStrategies;
-        this.contentRepository = contentRepository;
         this.store = store;
     }
 
@@ -59,17 +54,7 @@ public class CatalogService {
 
     /** Listado de administración; status y type son filtros opcionales (null = todos). */
     public Page<ContentSummaryView> listContents(ContentStatus status, ContentType type, Pageable pageable) {
-        Page<Content> page;
-        if (status != null && type != null) {
-            page = contentRepository.findByStatusAndType(status, type, pageable);
-        } else if (status != null) {
-            page = contentRepository.findByStatus(status, pageable);
-        } else if (type != null) {
-            page = contentRepository.findByType(type, pageable);
-        } else {
-            page = contentRepository.findAll(pageable);
-        }
-        return page.map(ContentMapper::toSummary);
+        return store.list(status, type, pageable).map(ContentMapper::toSummary);
     }
 
     // ------------------------------------------------------------------ actualizar
@@ -120,15 +105,11 @@ public class CatalogService {
 
     /**
      * Regla propia del equipo (el enunciado NO exige títulos únicos): misma obra = mismo título + año.
-     * Para no imponerla: borrar este método, sus dos llamadas, los dos exists del repositorio y la
-     * rama DuplicateKeyException de ContentStore.
+     * Para no imponerla: borrar este método, sus dos llamadas, existsOtherWithSameTitleAndYear del
+     * store, los dos exists del repositorio y la rama DuplicateKeyException de ContentStore.
      */
     private void assertNotDuplicate(Content content) {
-        boolean duplicate = content.getId() == null
-                ? contentRepository.existsByTitleNormalizedAndYear(content.getTitleNormalized(), content.getYear())
-                : contentRepository.existsByTitleNormalizedAndYearAndIdNot(
-                content.getTitleNormalized(), content.getYear(), content.getId());
-        if (duplicate) {
+        if (store.existsOtherWithSameTitleAndYear(content)) {
             throw new DuplicateContentException(content.getTitle(), content.getYear());
         }
     }
