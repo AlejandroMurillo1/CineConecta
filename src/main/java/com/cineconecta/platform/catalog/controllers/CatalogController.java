@@ -19,9 +19,4 @@ public class CatalogController {
     public CatalogController(CatalogService catalogService) {
         this.catalogService = catalogService;
     }
-
-    @PostMapping()
-    public Content createContent(@RequestBody @Valid CreateContentCommand command) {
-        return catalogService.createContent(command);
-    }
 }

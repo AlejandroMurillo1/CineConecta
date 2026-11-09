@@ -9,7 +9,7 @@ import java.util.List;
 
 public record CreateSeriesCommand(
         @NotNull @Valid ContentMetadata metadata,
-        @NotEmpty List<@Valid CreateSeasonDto> seasons
+        @NotEmpty List<@Valid SeasonDto> seasons
 ) implements CreateContentCommand {
 
     public CreateSeriesCommand {
@@ -19,7 +19,7 @@ public record CreateSeriesCommand(
     /** Regla: los números de temporada no se repiten dentro de la serie. */
     @AssertTrue(message = "No pueden existir temporadas con el mismo número en una serie")
     public boolean isSeasonNumbersUnique() {
-        return DtoLists.hasUniqueKeys(seasons, CreateSeasonDto::number);
+        return DtoLists.hasUniqueKeys(seasons, SeasonDto::number);
     }
 
     @Override

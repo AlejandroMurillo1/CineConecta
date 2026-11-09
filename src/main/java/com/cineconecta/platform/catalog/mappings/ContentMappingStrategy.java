@@ -4,6 +4,7 @@ import com.cineconecta.platform.catalog.ContentStatus;
 import com.cineconecta.platform.catalog.ContentType;
 import com.cineconecta.platform.catalog.dtos.ContentMetadata;
 import com.cineconecta.platform.catalog.dtos.CreateContentCommand;
+import com.cineconecta.platform.catalog.dtos.UpdateContentCommand;
 import com.cineconecta.platform.catalog.models.Content;
 import com.cineconecta.platform.catalog.models.ContentDetails;
 import com.cineconecta.platform.catalog.utils.TextNormalizer;
@@ -14,30 +15,37 @@ public interface ContentMappingStrategy {
 
     ContentType getSupportedType();
 
-    /** Convierte únicamente lo propio del tipo (los detalles). */
+    /** Comando de creación -> detalles del tipo. */
     ContentDetails mapDetails(CreateContentCommand command);
 
-    /** Plantilla: datos comunes + detalles del tipo. */
-    default Content mapToDomain(CreateContentCommand command) {
-        ContentMetadata meta = command.metadata();
-        Instant now = Instant.now();
+    /** Detalles actuales + comando de actualización -> detalles nuevos (puede devolver los actuales). */
+    ContentDetails updateDetails(ContentDetails current, UpdateContentCommand command);
 
+    /** Entidad -> comando precargado para el formulario de edición. */
+    UpdateContentCommand toUpdateCommand(Content content);
+
+    /** Reglas extra para publicar. Por defecto un contenido siempre es publicable. */
+    default void assertPublishable(ContentDetails details) {
+
+    }
+
+    /** Plantilla de creación: datos comunes + detalles del tipo. */
+    default Content mapToDomain(CreateContentCommand command) {
+        Instant now = Instant.now();
         Content content = new Content();
         content.setType(getSupportedType());
         content.setStatus(ContentStatus.DRAFT);
-        content.setTitle(meta.title());
-        content.setTitleNormalized(TextNormalizer.normalize(meta.title()));
-        content.setSynopsis(meta.synopsis());
-        content.setYear(meta.year());
-        content.setAgeRating(meta.ageRating());
-        content.setPosterUrl(meta.posterUrl());
-        content.setGenres(meta.genres());
-        content.setCountries(meta.countries());
-        content.setAudioLanguages(meta.audioLanguages());
-        content.setSubtitleLanguages(meta.subtitleLanguages());
+        ContentMapper.copyMetadata(command.metadata(), content);
         content.setCreatedAt(now);
         content.setUpdatedAt(now);
         content.setContentDetails(mapDetails(command));
         return content;
+    }
+
+    /** Plantilla de actualización: datos comunes + detalles del tipo. */
+    default void applyUpdate(Content content, UpdateContentCommand command) {
+        ContentMapper.copyMetadata(command.metadata(), content);
+        content.setContentDetails(updateDetails(content.getContentDetails(), command));
+        content.setUpdatedAt(Instant.now());
     }
 }

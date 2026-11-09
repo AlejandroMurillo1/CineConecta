@@ -5,8 +5,6 @@ import com.cineconecta.platform.catalog.dtos.*;
 import com.cineconecta.platform.catalog.models.*;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
-
 @Component
 public class SeriesMappingStrategy implements ContentMappingStrategy {
 
@@ -21,22 +19,29 @@ public class SeriesMappingStrategy implements ContentMappingStrategy {
             throw new IllegalArgumentException("Comando no soportado por SeriesMappingStrategy: "
                     + command.getClass().getSimpleName());
         }
-        return new SeriesDetails(series.seasons().stream()
-                .map(this::toSeason)
-                .sorted(Comparator.comparingInt(Season::number))   // orden por número, no por orden del formulario
-                .toList());
+        return SeriesUtils.create(series.seasons());
     }
 
-    private Season toSeason(CreateSeasonDto dto) {
-        return new Season(dto.number(), dto.description(), dto.episodes().stream()
-                .map(this::toEpisode)
-                .sorted(Comparator.comparingInt(Episode::number))
-                .toList());
+    @Override
+    public ContentDetails updateDetails(ContentDetails current, UpdateContentCommand command) {
+        if (!(command instanceof UpdateSeriesCommand)) {
+            throw new IllegalArgumentException("Comando no soportado por SeriesMappingStrategy: "
+                    + command.getClass().getSimpleName());
+        }
+        // Actualizar una serie NO toca su estructura: temporadas y episodios se gestionan con SeriesService.
+        return current;
     }
 
-    private Episode toEpisode(CreateEpisodeDto dto) {
-        // El episodeId lo genera el servidor: es estable y lo referenciará el historial de reproducción.
-        return new Episode(UUID.randomUUID().toString(), dto.number(), dto.title(),
-                dto.synopsis(), dto.durationSeconds());
+    @Override
+    public UpdateContentCommand toUpdateCommand(Content content) {
+        return new UpdateSeriesCommand(ContentMapper.toMetadata(content));
+    }
+
+    @Override
+    public void assertPublishable(ContentDetails details) {
+        if (!(details instanceof SeriesDetails series)) {
+            throw new IllegalStateException("Los detalles no corresponden a una serie");
+        }
+        SeriesUtils.assertPublishable(series);
     }
 }
