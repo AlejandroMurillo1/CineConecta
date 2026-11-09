@@ -12,9 +12,14 @@ public final class DtoLists {
         return text == null ? null : text.strip();
     }
 
+    /** Texto sin espacios sobrantes; vacío o en blanco se convierte en null (filtro no informado). */
+    public static String blankToNull(String text) {
+        return (text == null || text.isBlank()) ? null : text.strip();
+    }
+
     /** Lista inmutable y nunca nula. Tolera elementos nulos para que Bean Validation los reporte. */
     public static <T> List<T> immutable(List<T> list) {
-        return list == null ? List.of() : List.copyOf(list);
+        return list == null ? List.of() : Collections.unmodifiableList(new ArrayList<>(list));
     }
 
     /**
@@ -31,6 +36,14 @@ public final class DtoLists {
                 .filter(text -> !text.isEmpty())
                 .distinct()
                 .toList();
+    }
+
+    /**
+     * Como {@link #cleanTexts} pero además en minúsculas, para que "Drama" y "drama" sean el mismo
+     * género (el filtro de búsqueda compara el valor exacto). Los repetidos se eliminan DESPUÉS de bajar a minúsculas.
+     */
+    public static List<String> cleanLowercase(List<String> list) {
+        return cleanTexts(list).stream().map(text -> text.toLowerCase(Locale.ROOT)).distinct().toList();
     }
 
     /** true si ningún par de elementos comparte clave. Los nulos se ignoran (los reporta Bean Validation). */
