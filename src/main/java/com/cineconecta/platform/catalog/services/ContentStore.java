@@ -47,4 +47,6 @@ public class ContentStore {
             throw new DuplicateContentException(content.getTitle(), content.getYear());
         }
     }
+
+    //TODO: Metodos find que necesitan los services.
 }
