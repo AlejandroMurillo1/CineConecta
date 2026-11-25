@@ -1,13 +1,13 @@
 package com.cineconecta.platform;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.modulith.core.ApplicationModules;
 
-@SpringBootTest
 class PlatformApplicationTests {
 
     @Test
-    void contextLoads() {
+    void verifiesApplicationModulesAndCycleFreedom() {
+        ApplicationModules modules = ApplicationModules.of(PlatformApplication.class);
+        modules.verify();
     }
-
 }

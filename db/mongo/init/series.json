@@ -1,0 +1,57 @@
+{
+  "_id": { "$oid": "65f1a2b3c4d5e6f708192a02" },
+  "_class": "content",
+  "version": { "$numberLong": "2" },
+  "type": "SERIES",
+  "status": "PUBLISHED",
+  "title": "Las casas del río",
+  "titleNormalized": "las casas del rio",
+  "synopsis": "Tres familias que comparten una ribera descubren que su historia común es menos inocente de lo que recuerdan.",
+  "year": 2023,
+  "ageRating": 16,
+  "posterUrl": "https://example.com/posters/casas-del-rio.jpg",
+  "genres": ["drama", "misterio"],
+  "countries": ["CO"],
+  "audioLanguages": ["es"],
+  "subtitleLanguages": ["en"],
+  "schemaVersion": 1,
+  "createdAt": { "$date": "2026-11-02T15:10:00Z" },
+  "updatedAt": { "$date": "2026-11-03T09:30:00Z" },
+  "series": {
+    "seasons": [
+      {
+        "number": 1,
+        "description": "La llegada de una carta antigua reabre viejas deudas.",
+        "episodes": [
+          {
+            "episodeId": "0b7f3c52-6a1e-4d0b-9f43-2f1c8a5e7d01",
+            "number": 1,
+            "title": "La carta",
+            "synopsis": "Una carta sin remitente aparece en la casa más antigua de la ribera.",
+            "durationSeconds": 2760
+          },
+          {
+            "episodeId": "0b7f3c52-6a1e-4d0b-9f43-2f1c8a5e7d02",
+            "number": 2,
+            "title": "Crecida",
+            "synopsis": "El río sube y obliga a las familias a convivir bajo un mismo techo.",
+            "durationSeconds": 2880
+          }
+        ]
+      },
+      {
+        "number": 2,
+        "description": "Diez años después, el río devuelve lo que se llevó.",
+        "episodes": [
+          {
+            "episodeId": "0b7f3c52-6a1e-4d0b-9f43-2f1c8a5e7d03",
+            "number": 1,
+            "title": "Retorno",
+            "synopsis": "Una de las hijas regresa sin explicar dónde estuvo.",
+            "durationSeconds": 3000
+          }
+        ]
+      }
+    ]
+  }
+}

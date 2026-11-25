@@ -1,0 +1,29 @@
+{
+  "_id": { "$oid": "65f1a2b3c4d5e6f708192a01" },
+  "_class": "content",
+  "version": { "$numberLong": "0" },
+  "type": "MOVIE",
+  "status": "PUBLISHED",
+  "title": "La última función del Rex",
+  "titleNormalized": "la ultima funcion del rex",
+  "synopsis": "El último proyeccionista de un cine de barrio intenta salvar la sala la noche antes de su demolición.",
+  "year": 2021,
+  "ageRating": 12,
+  "posterUrl": "https://example.com/posters/ultima-funcion-rex.jpg",
+  "genres": ["drama", "comedia"],
+  "countries": ["CO", "AR"],
+  "audioLanguages": ["es"],
+  "subtitleLanguages": ["en", "pt-BR"],
+  "schemaVersion": 1,
+  "createdAt": { "$date": "2026-11-02T15:00:00Z" },
+  "updatedAt": { "$date": "2026-11-02T15:00:00Z" },
+  "movie": {
+    "durationSeconds": 6420,
+    "directors": ["Marcela Quintero"],
+    "cast": [
+      { "name": "Julián Restrepo", "character": "Don Aurelio" },
+      { "name": "Camila Arboleda", "character": "Lucía" },
+      { "name": "Tomás Ibarra" }
+    ]
+  }
+}

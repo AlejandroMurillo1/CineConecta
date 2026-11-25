@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmar Contratación — CineConecta</title>
+    <link rel="stylesheet" th:href="@{/css/billing.css}">
+</head>
+<body>
+<nav class="cc-navbar">
+    <a class="cc-brand" th:href="@{/billing/plans}">CineConecta</a>
+    <div class="cc-nav-links">
+        <a th:href="@{/billing/plans}">Planes</a>
+        <a th:href="@{/billing/history}">Historial y Pagos</a>
+    </div>
+</nav>
+
+<main class="cc-container" style="max-width: 680px;">
+    <header class="cc-header">
+        <h1>Confirmar contratación</h1>
+        <p class="cc-muted">Pago simulado en una única transacción junto con la activación de tu suscripción.</p>
+    </header>
+
+    <div id="checkout-feedback"
+         th:insert="~{billing/fragments/checkout-feedback :: feedback}">
+    </div>
+
+    <section class="cc-card" th:if="${plan != null and purchaseResult == null}">
+        <h2 style="margin-top: 0;" th:text="${plan.name()}">Plan</h2>
+        <p class="cc-muted">
+            Valor: <strong>$<span th:text="${#numbers.formatDecimal(plan.price(), 1, 'POINT', 0, 'COMMA')}">0</span> COP</strong><br>
+            Máximo de perfiles activos: <strong th:text="${plan.maxProfiles()}">1</strong><br>
+            Perfiles activos actuales: <strong th:text="${activeProfiles ?: 0}">0</strong><br>
+            Vigencia estimada [inicio, fin): <strong th:text="${previewStart}">-</strong> → <strong th:text="${previewEnd}">-</strong> (hora Colombia)
+        </p>
+
+        <form th:if="${authenticated}" th:action="@{/billing/checkout}" method="post">
+            <input type="hidden" name="planId" th:value="${plan.planId()}"/>
+
+            <div class="cc-radio-group">
+                <label class="cc-radio-option">
+                    <input type="radio" name="paymentMode" value="APPROVED" checked>
+                    <span><strong>Simular pago aprobado</strong> — genera referencia y activa suscripción por 30 días</span>
+                </label>
+                <label class="cc-radio-option">
+                    <input type="radio" name="paymentMode" value="REJECTED">
+                    <span><strong>Simular pago rechazado</strong> — valida que no se cree suscripción ni cobro</span>
+                </label>
+            </div>
+
+            <div style="display: flex; gap: 0.75rem;">
+                <button type="submit" class="cc-btn cc-btn-primary">Confirmar y pagar</button>
+                <a th:href="@{/billing/plans}" class="cc-btn cc-btn-secondary">Volver a planes</a>
+            </div>
+        </form>
+    </section>
+
+    <div style="margin-top: 1.25rem;" th:if="${plan == null or purchaseResult != null}">
+        <a th:href="@{/billing/plans}" class="cc-btn cc-btn-secondary">Volver a planes</a>
+        <a th:href="@{/billing/history}" class="cc-btn cc-btn-primary" style="margin-left: 0.5rem;">Ver historial</a>
+    </div>
+</main>
+</body>
+</html>
