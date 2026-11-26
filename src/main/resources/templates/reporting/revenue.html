@@ -5,15 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ingresos por plan — Administración CineConecta</title>
     <link rel="stylesheet" th:href="@{/css/billing.css}">
+    <link rel="stylesheet" th:href="@{/css/backoffice.css}">
     <link rel="stylesheet" th:href="@{/css/reporting.css}">
 </head>
 <body>
-<nav class="cc-navbar">
-    <a class="cc-brand" th:href="@{/admin/reports/revenue}">CineConecta · Administración</a>
-    <div class="cc-nav-links">
-        <a class="active" th:href="@{/admin/reports/revenue}">Ingresos por plan</a>
-    </div>
-</nav>
+<nav th:replace="~{backoffice/fragments/admin-nav :: nav('reports')}"></nav>
 
 <main class="cc-container">
     <header class="cc-header">
