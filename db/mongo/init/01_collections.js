@@ -175,6 +175,7 @@ const playbackSessionsSchema = {
     planIdAtStart: { bsonType: 'int', minimum: 1, description: 'planId de la suscripción vigente al iniciar' },
     startedAt: { bsonType: 'date' },
     endedAt: { bsonType: ['date', 'null'] },
+    lastActivityAt: { bsonType: 'date', description: 'último control o aviso recibido del reproductor' },
     playingSince: { bsonType: ['date', 'null'], description: 'interno: inicio del tramo en reproducción; null en pausa' },
     watchedSeconds: { bsonType: 'int', minimum: 0, description: 'tiempo real visto, sin saltos' },
     lastPosition: { bsonType: 'int', minimum: 0 },

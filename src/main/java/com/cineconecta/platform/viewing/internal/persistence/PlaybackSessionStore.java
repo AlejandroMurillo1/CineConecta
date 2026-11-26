@@ -10,7 +10,12 @@ import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
 import java.util.Date;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+
+import static com.mongodb.client.model.Aggregates.*;
+import static com.mongodb.client.model.Sorts.*;
 
 import static com.mongodb.client.model.Filters.*;
 import static com.mongodb.client.model.Updates.*;
@@ -37,7 +42,8 @@ public class PlaybackSessionStore {
                 .append("watchedSeconds", session.watchedSeconds())
                 .append("lastPosition", session.lastPosition())
                 .append("finished", session.finished())
-                .append("revision", session.revision());
+                .append("revision", session.revision())
+                .append("lastActivityAt", toDate(session.lastActivityAt()));
 
         if (session.episodeId() != null) {
             document.append("episodeId", new ObjectId(session.episodeId()));
@@ -51,6 +57,28 @@ public class PlaybackSessionStore {
         return Optional.ofNullable(document).map(this::read);
     }
 
+    public List<PlaybackSession> latestPerTitle(int accountId, int profileId) {
+        return collection().aggregate(List.of(
+                match(and(eq("profileId", profileId), eq("accountId", accountId))),
+                sort(descending("startedAt")),
+                group(new Document("content", "$contentId").append("episode", "$episodeId"),
+                        com.mongodb.client.model.Accumulators.first("session", "$$ROOT")),
+                replaceRoot("$session")
+        )).map(this::read).into(new ArrayList<>());
+    }
+
+    public void closeAbandoned(Instant now, Instant cutoff) {
+        var candidates = and(eq("endedAt", null), lte("startedAt", toDate(cutoff)),
+                or(lte("lastActivityAt", toDate(cutoff)), exists("lastActivityAt", false)));
+        for (Document document : collection().find(candidates)) {
+            PlaybackSession current = read(document);
+            PlaybackSession closed = current.closeIfAbandoned(now);
+            if (closed != current) {
+                saveAction(current, closed);
+            }
+        }
+    }
+
     public boolean saveAction(PlaybackSession previous, PlaybackSession next) {
         // La revisión impide que dos peticiones sumen el mismo tramo de reproducción.
         var revision = previous.revision() == 0
@@ -61,7 +89,8 @@ public class PlaybackSessionStore {
                         eq("endedAt", null), revision),
                 combine(set("playingSince", toDate(next.playingSince())), set("endedAt", toDate(next.endedAt())),
                         set("watchedSeconds", next.watchedSeconds()), set("lastPosition", next.lastPosition()),
-                        set("finished", next.finished()), set("revision", next.revision()))).getMatchedCount() == 1;
+                        set("finished", next.finished()), set("revision", next.revision()),
+                        set("lastActivityAt", toDate(next.lastActivityAt())))).getMatchedCount() == 1;
     }
 
     private PlaybackSession read(Document document) {
@@ -73,7 +102,18 @@ public class PlaybackSessionStore {
                 document.getInteger("planIdAtStart"), document.getInteger("durationSeconds"),
                 toInstant(document.getDate("startedAt")), toInstant(document.getDate("playingSince")),
                 toInstant(document.getDate("endedAt")), document.getInteger("watchedSeconds"),
-                document.getInteger("lastPosition"), document.getBoolean("finished"), document.getInteger("revision", 0));
+                document.getInteger("lastPosition"), document.getBoolean("finished"),
+                document.getInteger("revision", 0), lastActivity(document));
+    }
+
+    private static Instant lastActivity(Document document) {
+        for (String field : List.of("lastActivityAt", "endedAt", "playingSince", "startedAt")) {
+            Date date = document.getDate(field);
+            if (date != null) {
+                return date.toInstant();
+            }
+        }
+        throw new IllegalArgumentException("La sesión no tiene fecha de inicio.");
     }
 
     private MongoCollection<Document> collection() {
