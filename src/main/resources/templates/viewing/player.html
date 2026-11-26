@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Reproductor simulado | CineConecta</title>
+    <link rel="stylesheet" th:href="@{/css/billing.css}">
+    <script th:src="@{/js/playback.js}" defer></script>
+</head>
+<body>
+<nav class="cc-navbar">
+    <a class="cc-brand" th:href="@{/viewing/profiles/{id}/my-list(id=${profileId})}">Mi lista</a>
+</nav>
+<main class="cc-container">
+    <header class="cc-header"><h1>Reproductor simulado</h1></header>
+    <p th:if="${error}" th:text="${error}" class="cc-alert cc-alert-warning" role="alert"></p>
+
+    <form th:unless="${playbackSession}" th:action="@{/viewing/profiles/{id}/player(id=${profileId})}"
+          method="post" class="cc-card">
+        <label for="titleId">ID del título</label>
+        <input id="titleId" name="contentId" required>
+        <label for="episodeId">ID del episodio (solo para series)</label>
+        <input id="episodeId" name="episodeId">
+        <button type="submit" class="cc-btn cc-btn-primary">Iniciar</button>
+    </form>
+
+    <section th:if="${playbackSession}" class="cc-card">
+        <p th:if="${playbackSession.endedAt() != null}">Reproducción cerrada.</p>
+        <p id="playback-time">
+            <span id="playback-position" th:text="${position}">0</span> /
+            <span th:text="${playbackSession.durationSeconds()}">0</span> segundos
+        </p>
+        <progress id="playback-progress" aria-label="Posición de reproducción"
+                  th:value="${position}" th:max="${playbackSession.durationSeconds()}"
+                  th:data-playing="${playbackSession.playingSince() != null}"></progress>
+        <form id="playback-controls" th:if="${playbackSession.endedAt() == null}"
+              th:action="@{/viewing/profiles/{profile}/player/{id}(profile=${profileId},id=${playbackSession.id()})}" method="post">
+            <button th:if="${playbackSession.playingSince() != null}" id="playback-pause"
+                    name="action" value="PAUSE" class="cc-btn">Pausar</button>
+            <button th:if="${playbackSession.playingSince() == null}"
+                    name="action" value="RESUME" class="cc-btn">Reanudar</button>
+            <label for="seekPosition">Ir al segundo</label>
+            <input id="seekPosition" name="position" type="number" min="0" th:max="${playbackSession.durationSeconds()}">
+            <button name="action" value="SEEK" class="cc-btn">Avanzar</button>
+            <button name="action" value="FINISH" class="cc-btn cc-btn-primary">Finalizar</button>
+        </form>
+        <a th:if="${playbackSession.endedAt() != null}" th:href="@{/viewing/profiles/{id}/player(id=${profileId})}">
+            Iniciar otra reproducción
+        </a>
+    </section>
+</main>
+</body>
+</html>
