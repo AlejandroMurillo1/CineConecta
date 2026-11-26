@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{shared/layout :: head('Prueba', ~{::link})}">
+    <link rel="stylesheet" th:href="@{/css/billing.css}">
+</head>
+<body>
+<nav th:replace="~{shared/layout :: navbar('plans')}"></nav>
+<main id="main"><div th:replace="~{shared/layout :: flash}"></div></main>
+<footer th:replace="~{shared/layout :: footer}"></footer>
+</body>
+</html>
