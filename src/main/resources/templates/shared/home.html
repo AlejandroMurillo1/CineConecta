@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{shared/layout :: head('Inicio', ~{})}"></head>
+<body>
+<nav th:replace="~{shared/layout :: navbar('home')}"></nav>
+
+<main id="main" class="cc-container">
+    <div th:replace="~{shared/layout :: flash}"></div>
+
+    <header class="cc-header cc-fade-in">
+        <h1>Películas, series y documentales en un solo lugar</h1>
+        <p class="cc-muted">Elige un plan, crea perfiles para tu familia y retoma lo que estabas viendo.</p>
+    </header>
+
+    <div class="cc-grid">
+        <section class="cc-card">
+            <div>
+                <h2>Planes</h2>
+                <p class="cc-muted">Suscripciones de 30 días con pago simulado.</p>
+            </div>
+            <div class="cc-actions">
+                <a class="cc-btn cc-btn-primary" th:href="@{/billing/plans}">Ver planes</a>
+            </div>
+        </section>
+
+        <section class="cc-card" sec:authorize="!isAuthenticated()">
+            <div>
+                <h2>Tu cuenta</h2>
+                <p class="cc-muted">Regístrate o inicia sesión para administrar tus perfiles.</p>
+            </div>
+            <div class="cc-actions">
+                <a class="cc-btn cc-btn-primary" th:href="@{/register}">Crear cuenta</a>
+                <a class="cc-btn cc-btn-secondary" th:href="@{/login}">Iniciar sesión</a>
+            </div>
+        </section>
+
+        <section class="cc-card" sec:authorize="isAuthenticated()">
+            <div>
+                <h2>Perfiles</h2>
+                <p class="cc-muted">Selecciona quién está viendo.</p>
+            </div>
+            <div class="cc-actions">
+                <a class="cc-btn cc-btn-primary" th:href="@{/profiles}">Elegir perfil</a>
+            </div>
+        </section>
+    </div>
+</main>
+
+<footer th:replace="~{shared/layout :: footer}"></footer>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<!--
+  Fragmentos comunes de CineConecta (módulo shared).
+
+  1) <head> completo (metas, CSRF para htmx, app.css, htmx y app.js):
+       <head th:replace="~{shared/layout :: head('Planes', ~{::link})}">
+           <link rel="stylesheet" th:href="@{/css/billing.css}">   (hojas propias del módulo, opcional)
+       </head>
+     Sin hojas propias:  <head th:replace="~{shared/layout :: head('Planes', ~{})}"></head>
+
+  2) Navegación de clientes:   <nav th:replace="~{shared/layout :: navbar('plans')}"></nav>
+     Valores de "active": home, profiles, my-list, plans, history.
+     Usa el atributo de modelo opcional "currentProfile" (profileId, name) para "Mi lista" y el chip.
+
+  3) Mensajes flash (RedirectAttributes "success", "error", "info"):
+       <div th:replace="~{shared/layout :: flash}"></div>
+
+  4) Pie de página:           <footer th:replace="~{shared/layout :: footer}"></footer>
+-->
+<head th:fragment="head(title, extras)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:if="${_csrf != null}" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:if="${_csrf != null}" th:content="${_csrf.headerName}">
+    <title th:text="${title} + ' — CineConecta'">CineConecta</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <th:block th:replace="${extras}"></th:block>
+    <script th:src="@{/vendor/htmx/htmx-2.0.4.min.js}" defer></script>
+    <script th:src="@{/js/app.js}" defer></script>
+</head>
+<body>
+
+<nav th:fragment="navbar(active)" class="cc-navbar" aria-label="Navegación principal">
+    <a class="cc-skip-link" href="#main">Saltar al contenido</a>
+    <a class="cc-brand" th:href="@{/}">Cine<span>Conecta</span></a>
+
+    <div class="cc-nav-links">
+        <th:block sec:authorize="isAuthenticated()">
+            <!-- Catálogo: agregar aquí el enlace cuando el módulo catalog publique su pantalla de búsqueda. -->
+            <a th:if="${currentProfile != null}"
+               th:classappend="${active == 'my-list'} ? 'active'"
+               th:href="@{/viewing/profiles/{id}/my-list(id=${currentProfile.profileId()})}">Mi lista</a>
+            <a th:classappend="${active == 'profiles'} ? 'active'" th:href="@{/profiles}">Perfiles</a>
+        </th:block>
+        <a th:classappend="${active == 'plans'} ? 'active'" th:href="@{/billing/plans}">Planes</a>
+        <a sec:authorize="isAuthenticated()"
+           th:classappend="${active == 'history'} ? 'active'" th:href="@{/billing/history}">Historial y pagos</a>
+    </div>
+
+    <div class="cc-nav-user">
+        <th:block sec:authorize="isAuthenticated()">
+            <a th:if="${currentProfile != null}" class="cc-profile-chip" th:href="@{/profiles}"
+               title="Cambiar de perfil" th:text="${currentProfile.name()}">Perfil</a>
+            <form th:action="@{/logout}" method="post">
+                <button type="submit" class="cc-btn cc-btn-link">Cerrar sesión</button>
+            </form>
+        </th:block>
+        <th:block sec:authorize="!isAuthenticated()">
+            <a class="cc-btn cc-btn-link" th:href="@{/login}">Iniciar sesión</a>
+            <a class="cc-btn cc-btn-primary" th:href="@{/register}">Crear cuenta</a>
+        </th:block>
+    </div>
+</nav>
+
+<div th:fragment="flash" id="cc-flash" aria-live="polite">
+    <div th:if="${success != null}" class="cc-alert cc-alert-success cc-fade-in" role="status" th:text="${success}"></div>
+    <div th:if="${info != null}" class="cc-alert cc-alert-info cc-fade-in" role="status" th:text="${info}"></div>
+    <div th:if="${error != null}" class="cc-alert cc-alert-danger cc-fade-in" role="alert" th:text="${error}"></div>
+</div>
+
+<footer th:fragment="footer" class="cc-footer">
+    CineConecta · Proyecto académico SID II — Universidad Icesi
+</footer>
+
+</body>
+</html>
