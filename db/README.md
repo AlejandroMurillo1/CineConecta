@@ -85,11 +85,12 @@ Las tablas, columnas, relaciones e índices únicos del modelo (`ux_accounts_ema
 
 | Regla | Mecanismo |
 |---|---|
-| Datos obligatorios de cada tipo de contenido | `$jsonSchema`: un borrador guarda lo mínimo; publicado o retirado exige todo lo de su tipo |
-| Una serie publicada tiene al menos una temporada con un episodio | `$jsonSchema` |
+| Datos obligatorios de cada tipo de contenido | `$jsonSchema` sobre el modelo del módulo catalog: metadatos comunes en la raíz y datos del tipo en `contentDetails` |
+| Una serie publicada tiene al menos una temporada con un episodio | `$jsonSchema` (en borrador puede estar incompleta) |
+| Un mismo título no se repite en el mismo año | Índice único `ux_contents_title_year` sobre `titleNormalized` + `year` |
 | Estados y tipos válidos; clasificación 0–18 | `enum` y rangos en `$jsonSchema` |
 | Sin duplicados en "Mi lista" | `uniqueItems` en `contentIds` (y `$addToSet` al agregar) |
-| Las sesiones de series llevan el episodio | `$jsonSchema` (`episodeId` obligatorio si `contentType = SERIE`) |
+| Las sesiones de series llevan el episodio | `$jsonSchema` (`episodeId` obligatorio si `contentType = SERIES`) |
 | El identificador de un episodio no se repite entre series | Índice único parcial sobre `seasons.episodes.episodeId` |
 | Correo de administrador único y en minúsculas; contraseña como hash BCrypt | Índice único + `pattern` en `$jsonSchema` |
 | La aplicación no crea administradores | `cineApp` solo tiene `find` sobre `admin_users` |
@@ -107,4 +108,4 @@ Las tablas, columnas, relaciones e índices únicos del modelo (`ux_accounts_ema
 - **Enteros en MongoDB.** Los validadores exigen `int` (32 bits) en IDs de PostgreSQL, duraciones y posiciones. En Java, usar `Integer` (no `Long` ni `Double`). En `mongosh`, usar `NumberInt(...)`.
 - **Índices en Spring Data MongoDB.** Dejar `spring.data.mongodb.auto-index-creation=false`: los índices los crea `02_indexes.js`, y `cineApp` no tiene permiso para crearlos.
 - **Planes de ejemplo.** `03_plans.sql` trae valores inventados. Si el anexo del enunciado define los planes, reemplazarlos por esos.
-- **Identificadores del catálogo.** Se usa `ObjectId` para `contentId` y `episodeId`. Si P3 decide otro tipo, hay que ajustar `bsonType` en `01_collections.js`.
+- **Identificadores del catálogo.** `contentId` es un `ObjectId` y `episodeId` es un UUID en texto, como los genera el módulo catalog. Si cambia el modelo de `Content`, hay que ajustar el validador de `01_collections.js`.
