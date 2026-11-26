@@ -12,6 +12,7 @@
 </nav>
 <main class="cc-container">
     <header class="cc-header"><h1>Mi lista</h1></header>
+    <p><a th:href="@{/viewing/profiles/{id}/player(id=${profileId})}">Abrir reproductor simulado</a></p>
 
     <p th:if="${error}" th:text="${error}" class="cc-alert cc-alert-warning" role="alert"></p>
     <form th:action="@{/viewing/profiles/{id}/my-list(id=${profileId})}" method="post" class="cc-card">
