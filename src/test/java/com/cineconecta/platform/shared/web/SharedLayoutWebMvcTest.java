@@ -36,7 +36,7 @@ class SharedLayoutWebMvcTest {
                         containsString("<meta name=\"_csrf\""),
                         containsString("<meta name=\"_csrf_header\" content=\"X-CSRF-TOKEN\">"),
                         containsString("/css/app.css"),
-                        containsString("/vendor/htmx/htmx-2.0.4.min.js"),
+                        containsString("/webjars/htmx.org/2.0.11/dist/htmx.min.js"),
                         containsString("/js/app.js"),
                         containsString("class=\"cc-footer\""))));
     }
