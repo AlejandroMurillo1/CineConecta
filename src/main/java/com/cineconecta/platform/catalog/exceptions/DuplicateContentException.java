@@ -1,10 +1,7 @@
 package com.cineconecta.platform.catalog.exceptions;
 
-import lombok.Getter;
-
 import java.io.Serial;
 
-@Getter
 public class DuplicateContentException extends RuntimeException {
 
     @Serial
@@ -19,4 +16,11 @@ public class DuplicateContentException extends RuntimeException {
         this.year = year;
     }
 
+    public String getTitle() {
+        return title;
+    }
+
+    public int getYear() {
+        return year;
+    }
 }
