@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de administración — CineConecta</title>
+    <link rel="stylesheet" th:href="@{/css/billing.css}">
+    <link rel="stylesheet" th:href="@{/css/backoffice.css}">
+</head>
+<body>
+<nav th:replace="~{backoffice/fragments/admin-nav :: nav('home')}"></nav>
+
+<main class="cc-container">
+    <header class="cc-header">
+        <h1>Hola, <span sec:authentication="principal.displayName">administrador</span></h1>
+        <p class="cc-muted">Gestiona el catálogo y los planes, y consulta los informes.</p>
+    </header>
+
+    <div class="cc-grid">
+        <section class="cc-card">
+            <h2>Informes</h2>
+            <p class="cc-muted">Ingresos por plan en un período, con exportación a CSV.</p>
+            <a class="cc-btn cc-btn-primary" th:href="@{/admin/reports/revenue}">Ingresos por plan</a>
+        </section>
+        <section class="cc-card">
+            <h2>Catálogo</h2>
+            <p class="cc-muted">Registro, publicación y retiro de películas, series y documentales.</p>
+            <span class="cc-badge cc-badge-muted">En construcción</span>
+        </section>
+        <section class="cc-card">
+            <h2>Planes</h2>
+            <p class="cc-muted">Crear, renombrar, desactivar y reactivar planes.</p>
+            <span class="cc-badge cc-badge-muted">En construcción</span>
+        </section>
+    </div>
+</main>
+</body>
+</html>

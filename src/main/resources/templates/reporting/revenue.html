@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ingresos por plan — Administración CineConecta</title>
+    <link rel="stylesheet" th:href="@{/css/billing.css}">
+    <link rel="stylesheet" th:href="@{/css/backoffice.css}">
+    <link rel="stylesheet" th:href="@{/css/reporting.css}">
+</head>
+<body>
+<nav th:replace="~{backoffice/fragments/admin-nav :: nav('reports')}"></nav>
+
+<main class="cc-container">
+    <header class="cc-header">
+        <h1>Ingresos por plan</h1>
+        <p class="cc-muted">Total recaudado y suscripciones adquiridas en el período, según los pagos registrados.
+            Las fechas se interpretan en hora de Colombia e incluyen el día inicial y el final.</p>
+    </header>
+
+    <form class="cc-card rp-filters" method="get" th:action="@{/admin/reports/revenue}">
+        <label>Desde
+            <input type="date" name="from" th:value="${from}" required>
+        </label>
+        <label>Hasta
+            <input type="date" name="to" th:value="${to}" required>
+        </label>
+        <button type="submit" class="cc-btn cc-btn-primary">Consultar</button>
+        <a th:if="${report != null}"
+           th:href="@{/admin/reports/revenue.csv(from=${from}, to=${to})}"
+           class="cc-btn cc-btn-secondary">Exportar CSV</a>
+    </form>
+
+    <div th:if="${errorMessage != null}" class="cc-alert cc-alert-warning" th:text="${errorMessage}">Aviso</div>
+
+    <div th:if="${report != null and !report.hasData()}" class="cc-alert cc-alert-info">
+        No hay pagos registrados en este período.
+    </div>
+
+    <table class="cc-table" th:if="${report != null}">
+        <thead>
+        <tr>
+            <th>Plan</th>
+            <th class="rp-num">Suscripciones adquiridas</th>
+            <th class="rp-num">Total recaudado</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="row : ${report.rows()}">
+            <td th:text="${row.planName()}">Estándar</td>
+            <td class="rp-num" th:text="${row.paymentCount()}">0</td>
+            <td class="rp-num">
+                $<span th:text="${#numbers.formatDecimal(row.totalRevenue(), 1, 'POINT', 0, 'COMMA')}">0</span> COP
+            </td>
+        </tr>
+        </tbody>
+        <tfoot>
+        <tr class="rp-total">
+            <td>Total</td>
+            <td class="rp-num" th:text="${report.totalSubscriptions()}">0</td>
+            <td class="rp-num">
+                $<span th:text="${#numbers.formatDecimal(report.totalRevenue(), 1, 'POINT', 0, 'COMMA')}">0</span> COP
+            </td>
+        </tr>
+        </tfoot>
+    </table>
+</main>
+</body>
+</html>

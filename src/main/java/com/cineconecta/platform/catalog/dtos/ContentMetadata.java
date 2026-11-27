@@ -24,9 +24,9 @@ public record ContentMetadata(
         title = DtoLists.strip(title);
         synopsis = DtoLists.strip(synopsis);
         posterUrl = DtoLists.strip(posterUrl);
-        genres = DtoLists.cleanTexts(genres);
+        genres = DtoLists.cleanLowercase(genres);
         countries = DtoLists.cleanTexts(countries);
         audioLanguages = DtoLists.cleanTexts(audioLanguages);
-        subtitleLanguages = DtoLists.cleanTexts(subtitleLanguages);       // opcional: vacía si no viene
+        subtitleLanguages = DtoLists.cleanTexts(subtitleLanguages);
     }
 }

@@ -10,11 +10,11 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
-public class CatalogApiImpl implements ICatalogApi {
+public class CatalogApiService implements ICatalogApi {
     private final ContentStore store;
 
     @Autowired
-    public CatalogApiImpl(ContentStore contentStore) {
+    public CatalogApiService(ContentStore contentStore) {
         this.store = contentStore;
     }
 
@@ -56,7 +56,7 @@ public class CatalogApiImpl implements ICatalogApi {
         }
         List<String> ids = contentIds.stream().filter(Objects::nonNull).distinct().toList();
         return store.findAllById(ids).stream()
-                .map(CatalogApiImpl::toSummary)
+                .map(CatalogApiService::toSummary)
                 .collect(Collectors.toMap(ContentSummary::id, Function.identity(), (a, b) -> a, LinkedHashMap::new));
     }
 

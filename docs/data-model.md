@@ -164,101 +164,112 @@ La tabla es un historial: la aplicación solo puede insertar, nunca modificar. U
 
 ### 2.1 `contents` — catálogo
 
-Un documento por película, serie o documental. Es una colección **polimórfica**: el campo `type` indica qué campos propios del tipo aplican. Las temporadas y los episodios van **embebidos** en la serie, porque se leen juntos al abrirla, su tamaño es acotado y no existen fuera de ella.
+Un documento por película, serie o documental, con la forma que escribe el módulo `catalog` desde la clase `Content` (Spring Data MongoDB). Es una colección **polimórfica**:
+- Los **metadatos comunes** van en la raíz del documento.
+- Los **datos propios de cada tipo** van en el subdocumento `contentDetails`. Spring Data le agrega el campo `_class` con el alias del tipo (`MOVIE`, `SERIES` o `DOCUMENTARY`).
+- Las temporadas y los episodios van **embebidos** en la serie, porque se leen juntos al abrirla, su tamaño es acotado y no existen fuera de ella.
 
-**Campos comunes**
+**Campos comunes** (todos obligatorios desde la creación: la aplicación no guarda borradores incompletos)
 
-| Campo | Tipo BSON | Obligatorio | Descripción |
-|---|---|---|---|
-| `_id` | objectId | Sí | Identificador estable; nunca se reutiliza |
-| `type` | string | Sí | `PELICULA`, `SERIE` o `DOCUMENTAL`. No cambia después de crearse |
-| `title` | string | Sí | Título |
-| `status` | string | Sí | `BORRADOR`, `PUBLICADO` o `RETIRADO` |
-| `schemaVersion` | int | Sí | Versión del esquema del documento |
-| `createdAt`, `updatedAt` | date | Sí | Auditoría |
-| `synopsis` | string | Para publicar | Sinopsis |
-| `releaseYear` | int | Para publicar | Año de estreno (1888–2100) |
-| `genres` | array de string | Para publicar (≥ 1) | Géneros, sin repetidos |
-| `countries` | array de string | Para publicar (≥ 1) | Países de producción |
-| `audioLanguages` | array de string | Para publicar (≥ 1) | Idiomas de audio |
-| `subtitleLanguages` | array de string | Para publicar (puede ir vacío) | Idiomas de subtítulos |
-| `ageRating` | int | Para publicar | Clasificación por edad (0–18) |
-| `coverUrl` | string | Para publicar | URL de la portada (`http://` o `https://`) |
-| `publishedAt`, `retiredAt` | date o null | No | Fechas de publicación y retiro |
+| Campo | Tipo BSON | Descripción |
+|---|---|---|
+| `_id` | objectId | Identificador estable; nunca se reutiliza |
+| `_class` | string | Lo agrega Spring Data (`Content`) |
+| `version` | int o long | Control de concurrencia optimista (`@Version`): una edición simultánea se rechaza |
+| `type` | string | `MOVIE`, `SERIES` o `DOCUMENTARY`. No cambia después de crearse |
+| `status` | string | `DRAFT`, `PUBLISHED` o `RETIRED` |
+| `title` | string (1–200) | Título |
+| `titleNormalized` | string | Título sin tildes ni mayúsculas: para buscar y para impedir duplicados |
+| `synopsis` | string (1–2000) | Sinopsis |
+| `year` | int (1888–2100) | Año de estreno |
+| `ageRating` | int (0–18) | Clasificación por edad |
+| `posterUrl` | string | URL de la portada (`http://` o `https://`) |
+| `genres` | array de string (≥ 1) | Géneros, sin repetidos |
+| `countries` | array de string (≥ 1) | Países de producción, código ISO de 2 letras (`CO`) |
+| `audioLanguages` | array de string (≥ 1) | Idiomas de audio, código de idioma (`es`, `en`, `pt-BR`) |
+| `subtitleLanguages` | array de string (puede ir vacío) | Idiomas de subtítulos |
+| `schemaVersion` | int ≥ 1 | Versión del esquema del documento, para la evolución del catálogo |
+| `createdAt`, `updatedAt` | date | Auditoría |
+| `contentDetails` | object | Datos propios del tipo (ver abajo) |
 
-**Campos por tipo** (obligatorios para publicar, salvo los marcados como opcionales)
+**`contentDetails` según el tipo**
 
-| Tipo | Campo | Tipo BSON | Descripción |
-|---|---|---|---|
-| Película | `durationSeconds` | int ≥ 1 | Duración |
-| Película | `directors` | array de string (≥ 1) | Dirección |
-| Película | `cast` | array (≥ 1) de `{ person, character? }` | Reparto; el personaje es opcional |
-| Documental | `durationSeconds` | int ≥ 1 | Duración (una sola pieza) |
-| Documental | `directors` | array de string (≥ 1) | Dirección |
-| Documental | `topics`, `interviewees` | array de string | **Opcionales.** Temas y personas entrevistadas |
-| Documental | `sources` | array de `{ name, description? }` | **Opcional.** Fuentes o instituciones |
-| Serie | `seasons` | array (≥ 1) de temporada | Temporadas, cada una con al menos un episodio |
+| Tipo | Campo | Tipo BSON | Obligatorio | Descripción |
+|---|---|---|---|---|
+| `MOVIE` | `durationSeconds` | int ≥ 1 | Sí | Duración |
+| `MOVIE` | `directors` | array de string (≥ 1) | Sí | Dirección |
+| `MOVIE` | `cast` | array (≥ 1) de `{ name, character? }` | Sí | Reparto; el personaje es opcional ("cuando se conozca") |
+| `DOCUMENTARY` | `durationSeconds` | int ≥ 1 | Sí | Duración (una sola pieza) |
+| `DOCUMENTARY` | `directors` | array de string (≥ 1) | Sí | Dirección |
+| `DOCUMENTARY` | `topics` | array de string (≥ 1) | Sí | Temas abordados |
+| `DOCUMENTARY` | `interviewees` | array de string | No | Personas entrevistadas |
+| `DOCUMENTARY` | `sources` | array de string | No | Fuentes o instituciones participantes |
+| `SERIES` | `seasons` | array de temporada | Sí | Temporadas |
 
-**Temporada** `{ number, description, episodes[] }` y **episodio** `{ episodeId, number, title, synopsis, durationSeconds }`. Todos sus campos son obligatorios; `number` es un int ≥ 1 y `episodeId` es un objectId.
+**Temporada** `{ number, description, episodes[] }` y **episodio** `{ episodeId, number, title, synopsis, durationSeconds }`. Todos sus campos son obligatorios. `number` es un int ≥ 1 y `episodeId` es un **UUID en texto** que genera la aplicación y no cambia.
 
-**Regla de validación.** Un **borrador** solo exige los campos comunes marcados "Sí". Un contenido **publicado o retirado** debe cumplir todos los obligatorios de su tipo. Publicar equivale a pasar esa validación.
+**Regla por estado:** una serie en `DRAFT` puede quedar sin temporadas o con temporadas vacías mientras se arma. En `PUBLISHED` o `RETIRED` debe tener al menos una temporada, y cada temporada al menos un episodio.
 
 | Índice | Campos | Consulta |
 |---|---|---|
-| `tx_contents_title` | `title` (texto, español) | Búsqueda por título |
-| `ix_contents_status_type_year` | `status, type, releaseYear -1` | Búsqueda del cliente (publicados por tipo y año) y listado del administrador |
-| `ix_contents_status_genres` | `status, genres` | Filtro por género |
-| `ix_contents_status_audio` | `status, audioLanguages` | Filtro por idioma de audio |
-| `ix_contents_status_subtitles` | `status, subtitleLanguages` | Filtro por idioma de subtítulos |
-| `ux_contents_episode_id` | `seasons.episodes.episodeId` (único, parcial) | Resolver un episodio; impide repetir su ID entre series |
+| `ix_contents_status_type_age` | `status, type, ageRating` | Búsqueda del cliente: publicados, por tipo, con clasificación ≤ la del perfil (regla ESR: igualdades primero, el rango al final). También sirve al listado del administrador por estado y tipo |
+| `ix_contents_status_genres_age` | `status, genres, ageRating` | Filtro por género |
+| `ix_contents_status_audio_age` | `status, audioLanguages, ageRating` | Filtro por idioma de audio |
+| `ux_contents_title_year` | `titleNormalized, year` (único) | Impide registrar dos veces el mismo título en el mismo año |
+| `ux_contents_episode_id` | `contentDetails.seasons.episodes.episodeId` (único, parcial) | Resolver un episodio; impide repetir su ID entre series |
 
-Los índices de género e idioma van separados porque MongoDB no permite dos arreglos en un mismo índice compuesto.
+Los índices de género e idioma van separados porque MongoDB no permite dos arreglos en un mismo índice compuesto. La búsqueda por título es un "contiene" (expresión regular sobre `titleNormalized`), que no puede aprovechar un índice por rangos: se resuelve combinada con los demás filtros, que sí usan índice.
 
-**Lo controla la aplicación:** que los números de temporada y episodio no se repitan dentro de una serie, que el tipo no cambie y que un contenido retirado no se edite.
+**Lo controla la aplicación:** que los números de temporada y de episodio no se repitan dentro de una serie (son elementos del mismo documento, y un índice único no los compara entre sí), que el tipo no cambie y las transiciones de estado.
 
 **Ejemplo: serie publicada**
 
 ```json
 {
   "_id": { "$oid": "6740a1f0c3b2a1d4e5f60001" },
-  "type": "SERIE",
+  "_class": "Content",
+  "version": { "$numberLong": "3" },
+  "type": "SERIES",
+  "status": "PUBLISHED",
   "title": "Río Abajo",
+  "titleNormalized": "rio abajo",
   "synopsis": "Una familia de pescadores del Magdalena enfrenta el cierre del puerto.",
-  "releaseYear": 2024,
+  "year": 2024,
+  "ageRating": 13,
+  "posterUrl": "https://cdn.cineconecta.local/covers/rio-abajo.jpg",
   "genres": ["Drama"],
-  "countries": ["Colombia"],
+  "countries": ["CO"],
   "audioLanguages": ["es"],
   "subtitleLanguages": ["en"],
-  "ageRating": 13,
-  "coverUrl": "https://cdn.cineconecta.local/covers/rio-abajo.jpg",
-  "status": "PUBLICADO",
   "schemaVersion": 1,
   "createdAt": { "$date": "2026-11-01T15:00:00Z" },
   "updatedAt": { "$date": "2026-11-02T15:00:00Z" },
-  "publishedAt": { "$date": "2026-11-02T15:00:00Z" },
-  "seasons": [
-    {
-      "number": 1,
-      "description": "La llegada de la draga",
-      "episodes": [
-        { "episodeId": { "$oid": "6740a1f0c3b2a1d4e5f60101" }, "number": 1, "title": "Aguas bajas", "synopsis": "El puerto anuncia su cierre.", "durationSeconds": 2700 },
-        { "episodeId": { "$oid": "6740a1f0c3b2a1d4e5f60102" }, "number": 2, "title": "La subasta", "synopsis": "Los botes salen a remate.", "durationSeconds": 2820 }
-      ]
-    }
-  ]
+  "contentDetails": {
+    "_class": "SERIES",
+    "seasons": [
+      {
+        "number": 1,
+        "description": "La llegada de la draga",
+        "episodes": [
+          { "episodeId": "3f6c2a1e-8b4d-4c1a-9e2f-7a5b6c8d9e01", "number": 1, "title": "Aguas bajas", "synopsis": "El puerto anuncia su cierre.", "durationSeconds": 2700 },
+          { "episodeId": "9a1b2c3d-4e5f-4a6b-8c7d-0e1f2a3b4c02", "number": 2, "title": "La subasta", "synopsis": "Los botes salen a remate.", "durationSeconds": 2820 }
+        ]
+      }
+    ]
+  }
 }
 ```
 
-**Ejemplo: película publicada** (solo los campos propios del tipo)
+**Ejemplo: `contentDetails` de una película**
 
 ```json
 {
-  "type": "PELICULA",
+  "_class": "MOVIE",
   "durationSeconds": 6240,
   "directors": ["Laura Méndez"],
   "cast": [
-    { "person": "Andrés Cárdenas", "character": "Tomás" },
-    { "person": "María Ospina" }
+    { "name": "Andrés Cárdenas", "character": "Tomás" },
+    { "name": "María Ospina" }
   ]
 }
 ```
@@ -296,8 +307,8 @@ Un documento por sesión. Es un historial: una sesión cerrada no se modifica. E
 | `accountId` | int | Sí | Cuenta (PostgreSQL) |
 | `profileId` | int | Sí | Perfil que reproduce (PostgreSQL) |
 | `contentId` | objectId | Sí | Película, documental o serie |
-| `episodeId` | objectId | Solo en series | Episodio reproducido |
-| `contentType` | string | Sí | `PELICULA`, `SERIE` o `DOCUMENTAL` (copia al iniciar) |
+| `episodeId` | string (UUID) | Solo en series | Episodio reproducido |
+| `contentType` | string | Sí | `MOVIE`, `SERIES` o `DOCUMENTARY` (copia al iniciar) |
 | `durationSeconds` | int ≥ 1 | Sí | Duración de la pieza (copia al iniciar) |
 | `planIdAtStart` | int | Sí | Plan de la suscripción vigente al iniciar (copia de PostgreSQL) |
 | `startedAt` | date | Sí | Inicio |
@@ -334,8 +345,8 @@ Mientras el reproductor está visible y en marcha, guarda la posición y el tiem
   "accountId": 17,
   "profileId": 42,
   "contentId": { "$oid": "6740a1f0c3b2a1d4e5f60001" },
-  "episodeId": { "$oid": "6740a1f0c3b2a1d4e5f60102" },
-  "contentType": "SERIE",
+  "episodeId": "9a1b2c3d-4e5f-4a6b-8c7d-0e1f2a3b4c02",
+  "contentType": "SERIES",
   "durationSeconds": 2820,
   "planIdAtStart": 2,
   "startedAt": { "$date": "2026-11-18T01:05:00Z" },
@@ -383,8 +394,8 @@ Como `cineApp` solo puede leer `admin_users`, la aplicación no puede crear admi
 | `profileId` | `profiles` | `_id` de `my_lists`, `playback_sessions` | Verificación V1 en PostgreSQL antes de escribir: el perfil existe, está activo y pertenece a la cuenta |
 | `planIdAtStart` | `subscriptions` (vía `v_current_subscription`) | `playback_sessions` | Se lee de la suscripción vigente al iniciar la sesión |
 | `contentId` | `contents` | `my_lists`, `playback_sessions` | La aplicación lo resuelve contra `contents`; nunca se borra ni se reutiliza |
-| `episodeId` | `contents.seasons.episodes` | `playback_sessions` | La aplicación lo resuelve contra `contents` |
+| `episodeId` | `contents.contentDetails.seasons.episodes` | `playback_sessions` | La aplicación lo resuelve contra `contents` |
 
 **Verificación V1** (antes de buscar, agregar a "Mi lista" o iniciar una reproducción):
 1. En PostgreSQL: el perfil está activo y pertenece a la cuenta autenticada, y la cuenta tiene una suscripción vigente (`v_current_subscription`).
-2. En MongoDB: el contenido está publicado y su `ageRating` es menor o igual al `maxAgeRating` del perfil.
+2. En MongoDB: el contenido está publicado (`PUBLISHED`) y su `ageRating` es menor o igual al `maxAgeRating` del perfil.
