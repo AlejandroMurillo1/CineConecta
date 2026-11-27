@@ -1,0 +1,8 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="head(title)"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title th:text="${title + ' · CineConecta'}">CineConecta</title><link rel="stylesheet" th:href="@{/css/catalog.css}"><script defer th:src="@{/webjars/htmx.org/2.0.11/dist/htmx.min.js}"></script></head>
+<body>
+<header th:fragment="nav(active)" class="site-header"><a class="brand" th:href="@{/catalog}"><span class="brand-mark">C</span><span>Cine<span class="brand-light">Conecta</span></span></a><nav><a th:classappend="${active == 'catálogo' ? ' active' : ''}" th:href="@{/catalog}">Descubrir</a><a th:href="@{/admin/contents}">Administración</a></nav><span class="profile-chip">Mi perfil</span></header>
+<div th:fragment="notice(message, error)" th:if="${message != null or error != null}" class="notice" th:classappend="${error != null ? ' notice-error' : ''}" role="status" th:text="${error != null ? error : message}"></div>
+<footer th:fragment="footer" class="site-footer"><span class="brand"><span class="brand-mark">C</span> CineConecta</span><span>Historias que nos conectan.</span></footer>
+</body></html>

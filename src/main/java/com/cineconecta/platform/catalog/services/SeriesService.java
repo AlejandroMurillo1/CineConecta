@@ -1,6 +1,7 @@
 package com.cineconecta.platform.catalog.services;
 
 import com.cineconecta.platform.catalog.dtos.ContentView;
+import com.cineconecta.platform.catalog.dtos.ContentEditModel;
 import com.cineconecta.platform.catalog.dtos.EpisodeDto;
 import com.cineconecta.platform.catalog.dtos.SeasonDto;
 import com.cineconecta.platform.catalog.exceptions.ContentRuleException;
@@ -16,6 +17,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
 import java.time.Instant;
+import java.util.List;
+import java.util.Objects;
 import java.util.function.UnaryOperator;
 
 @Service
@@ -26,6 +29,29 @@ public class SeriesService {
     @Autowired
     public SeriesService(ContentStore store) {
         this.store = store;
+    }
+
+    public ContentView getSeries(String seriesId) {
+        Content content = store.get(seriesId);
+        if (!(content.getContentDetails() instanceof SeriesDetails)) {
+            throw new ContentRuleException("El contenido " + seriesId + " no es una serie");
+        }
+        return ContentMapper.toView(content);
+    }
+
+    public ContentEditModel getEpisodeEditModel(String seriesId, int seasonNumber, String episodeId) {
+        Content content = store.get(seriesId);
+        if (!(content.getContentDetails() instanceof SeriesDetails series)) {
+            throw new ContentRuleException("El contenido " + seriesId + " no es una serie");
+        }
+        var episode = (series.seasons() == null ? List.<com.cineconecta.platform.catalog.models.Season>of() : series.seasons())
+                .stream().filter(s -> s.number() == seasonNumber)
+                .flatMap(s -> s.episodes() == null ? java.util.stream.Stream.empty() : s.episodes().stream())
+                .filter(e -> Objects.equals(e.episodeId(), episodeId))
+                .findFirst().orElseThrow(() -> new com.cineconecta.platform.catalog.exceptions.ContentNotFoundException(
+                        "No existe el episodio " + episodeId));
+        return new ContentEditModel(content.getId(), content.getVersion(), null,
+                new EpisodeDto(episode.number(), episode.title(), episode.synopsis(), episode.durationSeconds()));
     }
 
     public ContentView addSeason(String seriesId, long expectedVersion, @NotNull @Valid SeasonDto season) {

@@ -77,6 +77,15 @@ public class ContentStore {
         return content;
     }
 
+    /** Read-modify-write gate for publishing again or restoring; still enforces the observed version. */
+    public Content getForRepublish(String id, long expectedVersion) {
+        Content content = get(id);
+        if (!Objects.equals(content.getVersion(), expectedVersion)) {
+            throw new StaleContentException(id);
+        }
+        return content;
+    }
+
     public Content save(Content content) {
         try {
             return repository.save(content);

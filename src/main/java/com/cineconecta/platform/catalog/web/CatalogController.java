@@ -1,6 +1,7 @@
 package com.cineconecta.platform.catalog.web;
 
 import com.cineconecta.platform.catalog.ContentType;
+import com.cineconecta.platform.catalog.ViewerContext;
 import com.cineconecta.platform.catalog.dtos.ContentSearchFilter;
 import com.cineconecta.platform.catalog.exceptions.ContentNotFoundException;
 import com.cineconecta.platform.catalog.services.CatalogSearchService;
