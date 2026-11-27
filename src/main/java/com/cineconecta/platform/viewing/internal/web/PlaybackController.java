@@ -4,6 +4,8 @@ import com.cineconecta.platform.viewing.internal.service.PlaybackService;
 import com.cineconecta.platform.viewing.internal.service.PlaybackSession;
 import com.cineconecta.platform.viewing.internal.service.ViewingAccess;
 import org.springframework.stereotype.Controller;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -36,6 +38,12 @@ public class PlaybackController {
             redirect.addFlashAttribute("error", error.getMessage());
             return "redirect:/viewing/profiles/{profileId}/player";
         }
+    }
+
+    @PostMapping("/{sessionId}/checkpoint")
+    public ResponseEntity<Void> checkpoint(@PathVariable int profileId, @PathVariable String sessionId) {
+        return playback.checkpoint(profileId, sessionId)
+                ? ResponseEntity.noContent().build() : ResponseEntity.status(HttpStatus.GONE).build();
     }
 
     @GetMapping("/{sessionId}")

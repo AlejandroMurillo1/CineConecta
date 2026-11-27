@@ -33,6 +33,9 @@
         <progress id="playback-progress" aria-label="Posición de reproducción"
                   th:value="${position}" th:max="${playbackSession.durationSeconds()}"
                   th:data-playing="${playbackSession.playingSince() != null}"></progress>
+        <form id="playback-checkpoint" hidden th:if="${playbackSession.playingSince() != null}"
+              th:action="@{/viewing/profiles/{profile}/player/{id}/checkpoint(profile=${profileId},id=${playbackSession.id()})}"
+              method="post"></form>
         <form id="playback-controls" th:if="${playbackSession.endedAt() == null}"
               th:action="@{/viewing/profiles/{profile}/player/{id}(profile=${profileId},id=${playbackSession.id()})}" method="post">
             <button th:if="${playbackSession.playingSince() != null}" id="playback-pause"

@@ -313,12 +313,15 @@ Un documento por sesión. Es un historial: una sesión cerrada no se modifica. E
 | `planIdAtStart` | int | Sí | Plan de la suscripción vigente al iniciar (copia de PostgreSQL) |
 | `startedAt` | date | Sí | Inicio |
 | `endedAt` | date o null | Sí | Fin; `null` mientras la sesión está abierta |
+| `lastActivityAt` | date | No | Último control o aviso del reproductor. Opcional para sesiones anteriores |
 | `playingSince` | date o null | No | Interno: inicio del tramo en reproducción; `null` en pausa |
 | `watchedSeconds` | int ≥ 0 | Sí | Tiempo realmente visto, sin los saltos de "avanzar" |
 | `lastPosition` | int ≥ 0 | Sí | Última posición alcanzada |
 | `finished` | bool | Sí | El usuario la finalizó con el control "finalizar" |
 
 **Datos copiados.** `contentType`, `durationSeconds` y `planIdAtStart` son fotos inmutables del momento de inicio. No pueden quedar inconsistentes porque registran un hecho histórico, y permiten calcular los informes sin consultar el catálogo ni PostgreSQL por cada sesión.
+
+**Informe de consumo.** `ConsumptionApi.byPlanAndType` selecciona las sesiones iniciadas en el intervalo `[inicio, fin)`. Suma los segundos vistos y cuenta una sola vez cada perfil dentro de cada plan y tipo. El plan usado es `planIdAtStart`. Los segundos se convierten a minutos con dos decimales después de sumar. El módulo de informes puede consultar en PostgreSQL el nombre de cada plan.
 
 **Completado** (calculado, no se guarda): `finished = true` o `lastPosition ≥ 90 %` de `durationSeconds`.
 
@@ -335,6 +338,8 @@ Un documento por sesión. Es un historial: una sesión cerrada no se modifica. E
 3. Agrupar por pieza (`contentId` + `episodeId`) y tomar la sesión más reciente con `$first`.
 4. Descartar las completadas y los contenidos retirados.
 5. Ordenar por actividad reciente.
+
+Mientras el reproductor está visible y en marcha, guarda la posición y el tiempo visto cada 10 segundos. Una sesión se cierra si pasa un minuto sin actividad. Se conserva la posición del último aviso y no se cuenta como visto el tiempo posterior. Si se retoma una sesión cerrada, se inicia una nueva desde esa posición y se consulta de nuevo el plan vigente.
 
 ```json
 {
