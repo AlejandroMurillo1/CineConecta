@@ -4,6 +4,7 @@ import com.cineconecta.platform.catalog.ContentType;
 import com.cineconecta.platform.catalog.mappings.ContentMappingStrategy;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 
 import java.util.List;
 import java.util.Map;
@@ -11,6 +12,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Configuration
+@EnableMethodSecurity
 public class CatalogConfig {
     @Bean
     public Map<ContentType, ContentMappingStrategy> mapperStrategiesMap(List<ContentMappingStrategy> strategies) {

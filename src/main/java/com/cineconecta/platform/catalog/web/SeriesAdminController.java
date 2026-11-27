@@ -172,11 +172,11 @@ public class SeriesAdminController {
 
     /** Una temporada nueva exige al menos un episodio: se ofrece una fila en blanco para empezar. */
     private static SeasonDto blankSeason() {
-        return new SeasonDto(null, null, List.of(blankEpisode()));
+        return new SeasonDto(0, null, List.of(blankEpisode()));
     }
 
     private static EpisodeDto blankEpisode() {
-        return new EpisodeDto(null, null, null, null);
+        return new EpisodeDto(0, null, null, 0);
     }
 
     private static String redirectTo(String seriesId) {

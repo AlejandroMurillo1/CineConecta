@@ -77,11 +77,11 @@ const documentary = {
     },
 };
 
-// Una rama por tipo: exige SU subdocumento y prohíbe los de los otros tipos.
-const branch = (typeValue, key, schema, others) => ({
-    properties: { type: { enum: [typeValue] }, [key]: schema },
-    required: [key],
-    not: { anyOf: others.map((k) => ({ required: [k] })) },
+// Spring Data persiste el tipo concreto dentro de contentDetails mediante @TypeAlias.
+const detailsBranch = (alias, schema) => ({
+    bsonType: "object",
+    required: ["_class", ...Object.keys(schema.properties)],
+    properties: { _class: { enum: [alias] }, ...schema.properties },
 });
 
 // --- esquema raíz ------------------------------------------------------------------
@@ -90,7 +90,7 @@ const schema = {
     required: [
         "type", "status", "title", "titleNormalized", "synopsis", "year", "ageRating",
         "posterUrl", "genres", "countries", "audioLanguages", "subtitleLanguages",
-        "schemaVersion", "createdAt", "updatedAt",
+        "schemaVersion", "createdAt", "updatedAt", "contentDetails",
     ],
     properties: {
         _id: { bsonType: "objectId" },
@@ -102,7 +102,7 @@ const schema = {
         titleNormalized: str,
         synopsis: str,
         year: { bsonType: INT, minimum: 1888, maximum: 2100 },
-        ageRating: { bsonType: INT, minimum: 0, maximum: 21 },   // ajustar si el equipo define otra escala
+        ageRating: { bsonType: INT, minimum: 0, maximum: 18 },
         posterUrl: { bsonType: "string", pattern: "^https?://\\S+$" },
         genres: strList(1),
         countries: codeList(COUNTRY, 1),
@@ -111,13 +111,13 @@ const schema = {
         schemaVersion: { bsonType: INT, minimum: 1 },
         createdAt: { bsonType: "date" },
         updatedAt: { bsonType: "date" },
-        movie, series, documentary,
+        contentDetails: { bsonType: "object" },
     },
-    // Exactamente un tipo válido.
+    // El discriminador debe coincidir con ContentType y con el alias del detalle persistido.
     oneOf: [
-        branch("MOVIE", "movie", movie, ["series", "documentary"]),
-        branch("SERIES", "series", series, ["movie", "documentary"]),
-        branch("DOCUMENTARY", "documentary", documentary, ["movie", "series"]),
+        { properties: { type: { enum: ["MOVIE"] }, contentDetails: detailsBranch("MOVIE", movie) } },
+        { properties: { type: { enum: ["SERIES"] }, contentDetails: detailsBranch("SERIES", series) } },
+        { properties: { type: { enum: ["DOCUMENTARY"] }, contentDetails: detailsBranch("DOCUMENTARY", documentary) } },
     ],
 };
 
@@ -157,5 +157,10 @@ db.contents.createIndex(
 db.contents.createIndex(
     { status: 1, titleNormalized: 1 },
     { name: "idx_title" });
+
+// Invariante de unicidad que aplica CatalogService (normalización sin tildes ni mayúsculas).
+db.contents.createIndex(
+    { titleNormalized: 1, year: 1 },
+    { name: "uk_title_year", unique: true });
 
 print("contents: índices listos -> " + db.contents.getIndexes().map((i) => i.name).join(", "));
