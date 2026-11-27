@@ -321,6 +321,8 @@ Un documento por sesión. Es un historial: una sesión cerrada no se modifica. E
 
 **Datos copiados.** `contentType`, `durationSeconds` y `planIdAtStart` son fotos inmutables del momento de inicio. No pueden quedar inconsistentes porque registran un hecho histórico, y permiten calcular los informes sin consultar el catálogo ni PostgreSQL por cada sesión.
 
+**Informe de consumo.** `ConsumptionApi.byPlanAndType` selecciona las sesiones iniciadas en el intervalo `[inicio, fin)`. Suma los segundos vistos y cuenta una sola vez cada perfil dentro de cada plan y tipo. El plan usado es `planIdAtStart`. Los segundos se convierten a minutos con dos decimales después de sumar. El módulo de informes puede consultar en PostgreSQL el nombre de cada plan.
+
 **Completado** (calculado, no se guarda): `finished = true` o `lastPosition ≥ 90 %` de `durationSeconds`.
 
 | Índice | Campos | Consulta |
