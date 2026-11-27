@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<!--
+  Página de error única para clientes (Spring Boot la usa para cualquier código si no existe
+  error/<código>.html). Nunca muestra trazas ni mensajes internos: solo el código y un texto fijo.
+-->
+<head th:replace="~{shared/layout :: head('Error', ~{})}"></head>
+<body>
+<nav th:replace="~{shared/layout :: navbar('')}"></nav>
+
+<main id="main" class="cc-container cc-container-narrow">
+    <section class="cc-card cc-error-page" th:with="code=${status ?: 500}">
+        <p class="cc-error-code" th:text="${code}">500</p>
+        <th:block th:switch="${code}">
+            <th:block th:case="400">
+                <h1>Solicitud no válida</h1>
+                <p class="cc-muted">Revisa los datos enviados e intenta de nuevo.</p>
+            </th:block>
+            <th:block th:case="401">
+                <h1>Inicia sesión para continuar</h1>
+                <p class="cc-muted">Tu sesión no existe o ya expiró.</p>
+            </th:block>
+            <th:block th:case="403">
+                <h1>Acceso denegado</h1>
+                <p class="cc-muted">No tienes permiso para ver esta página.</p>
+            </th:block>
+            <th:block th:case="404">
+                <h1>Página no encontrada</h1>
+                <p class="cc-muted">La dirección no existe o el contenido ya no está disponible.</p>
+            </th:block>
+            <th:block th:case="503">
+                <h1>Servicio no disponible</h1>
+                <p class="cc-muted">Una de nuestras bases de datos no responde en este momento. Intenta en unos minutos.</p>
+            </th:block>
+            <th:block th:case="*">
+                <h1>Algo salió mal</h1>
+                <p class="cc-muted">Ocurrió un error inesperado. Ya quedó registrado; intenta de nuevo.</p>
+            </th:block>
+        </th:block>
+        <div class="cc-actions">
+            <a class="cc-btn cc-btn-primary" th:href="@{/}">Ir al inicio</a>
+            <a th:if="${code == 401}" class="cc-btn cc-btn-secondary" th:href="@{/login}">Iniciar sesión</a>
+        </div>
+    </section>
+</main>
+
+<footer th:replace="~{shared/layout :: footer}"></footer>
+</body>
+</html>
