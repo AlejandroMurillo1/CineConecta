@@ -1,6 +1,7 @@
 package com.cineconecta.platform.shared.web;
 
 import com.cineconecta.platform.accounts.ProfileView;
+import com.cineconecta.platform.shared.PermitAllSecurityTestConfig;
 import com.cineconecta.platform.shared.config.SharedConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +22,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = {HomeController.class, SharedLayoutWebMvcTest.LayoutProbeController.class})
-@Import({SharedConfig.class, SharedLayoutWebMvcTest.LayoutProbeController.class})
+@Import({SharedConfig.class, PermitAllSecurityTestConfig.class, SharedLayoutWebMvcTest.LayoutProbeController.class})
 class SharedLayoutWebMvcTest {
 
     @Autowired
