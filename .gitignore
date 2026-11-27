@@ -31,3 +31,6 @@ build/
 
 ### VS Code ###
 .vscode/
+.env
+# Configuración local de cada máquina (puertos, credenciales de desarrollo)
+config/

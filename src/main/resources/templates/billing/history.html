@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historial de Suscripciones y Pagos — CineConecta</title>
+    <link rel="stylesheet" th:href="@{/css/billing.css}">
+</head>
+<body>
+<nav class="cc-navbar">
+    <a class="cc-brand" th:href="@{/billing/plans}">CineConecta</a>
+    <div class="cc-nav-links">
+        <a th:href="@{/billing/plans}">Planes</a>
+        <a class="active" th:href="@{/billing/history}">Historial y Pagos</a>
+    </div>
+</nav>
+
+<main class="cc-container">
+    <header class="cc-header">
+        <h1>Historial de suscripciones y pagos</h1>
+        <p class="cc-muted">Registro inmutable de tus períodos contratados y pagos aprobados (hora Colombia).</p>
+    </header>
+
+    <div th:if="${errorMessage != null}" class="cc-alert cc-alert-warning" th:text="${errorMessage}">Aviso</div>
+
+    <div th:if="${authenticated and #lists.isEmpty(history)}" class="cc-alert cc-alert-info">
+        Aún no tienes suscripciones registradas.
+        <a th:href="@{/billing/plans}" style="color: #fff; text-decoration: underline;">Explora los planes disponibles</a>.
+    </div>
+
+    <table class="cc-table" th:if="${authenticated and !#lists.isEmpty(history)}">
+        <thead>
+        <tr>
+            <th>Plan</th>
+            <th>Estado</th>
+            <th>Inicio (incluido)</th>
+            <th>Fin (excluido)</th>
+            <th>Monto</th>
+            <th>Fecha de pago</th>
+            <th>Referencia</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="item : ${history}">
+            <td th:text="${item.subscription().planName()}">Estándar</td>
+            <td>
+                <span th:if="${item.active()}" class="cc-badge cc-badge-success">Vigente</span>
+                <span th:unless="${item.active()}" class="cc-badge cc-badge-muted">Vencida</span>
+            </td>
+            <td th:text="${fmt.format(item.subscription().startsAt())}">inicio</td>
+            <td th:text="${fmt.format(item.subscription().endsAt())}">fin</td>
+            <td>
+                <span th:if="${item.amountPaid() != null}">
+                    $<span th:text="${#numbers.formatDecimal(item.amountPaid(), 1, 'POINT', 0, 'COMMA')}">0</span> COP
+                </span>
+                <span th:if="${item.amountPaid() == null}" class="cc-muted">-</span>
+            </td>
+            <td th:text="${item.paidAt() != null ? fmt.format(item.paidAt()) : '-'}">fecha</td>
+            <td><code th:text="${item.paymentReference() ?: '-'}">REF</code></td>
+        </tr>
+        </tbody>
+    </table>
+</main>
+</body>
+</html>

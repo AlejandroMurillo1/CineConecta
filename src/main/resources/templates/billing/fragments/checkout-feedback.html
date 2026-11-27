@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="feedback">
+    <div th:if="${errorMessage != null}" class="cc-alert cc-alert-danger" role="alert">
+        <strong>No se pudo completar la contratación:</strong>
+        <span th:text="${errorMessage}">Error</span>
+    </div>
+
+    <div th:if="${purchaseResult != null}" class="cc-alert cc-alert-success" role="status">
+        <h3 style="margin-top: 0;">Suscripción activada con éxito</h3>
+        <p style="margin-bottom: 0;">
+            Plan: <strong th:text="${purchaseResult.subscription().planName()}">Plan</strong><br>
+            Referencia de pago: <strong th:text="${purchaseResult.reference()}">SIM-REF</strong><br>
+            Monto pagado: <strong>$<span th:text="${#numbers.formatDecimal(purchaseResult.amount(), 1, 'POINT', 0, 'COMMA')}">0</span> COP</strong><br>
+            Vigencia [inicio, fin):
+            <strong th:text="${fmt.format(purchaseResult.subscription().startsAt())}">inicio</strong>
+            →
+            <strong th:text="${fmt.format(purchaseResult.subscription().endsAt())}">fin</strong> (hora Colombia)
+        </p>
+    </div>
+</div>
+</body>
+</html>

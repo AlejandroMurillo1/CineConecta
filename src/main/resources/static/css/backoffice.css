@@ -1,0 +1,56 @@
+/* Complementa billing.css (variables y componentes cc-*) para el panel de administración. */
+
+.bo-user {
+    color: var(--cc-muted);
+    font-size: 0.9rem;
+}
+
+.bo-logout {
+    display: inline;
+    margin: 0;
+}
+
+.cc-nav-links {
+    align-items: center;
+}
+
+.bo-login-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.bo-login-card {
+    width: 100%;
+    max-width: 380px;
+}
+
+.bo-login-card h1 {
+    margin-top: 0;
+}
+
+.bo-login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.bo-login-form label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    color: var(--cc-muted);
+    font-size: 0.9rem;
+}
+
+.bo-login-form input {
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--cc-border);
+    border-radius: 6px;
+    background: var(--cc-surface-soft);
+    color: var(--cc-text);
+    font: inherit;
+}
