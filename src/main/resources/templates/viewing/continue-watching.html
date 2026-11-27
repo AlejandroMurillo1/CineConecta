@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Continuar viendo | CineConecta</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<nav class="cc-navbar">
+    <a class="cc-brand" th:href="@{/viewing/profiles/{id}/my-list(id=${profileId})}">Mi lista</a>
+</nav>
+<main class="cc-container">
+    <header class="cc-header"><h1>Continuar viendo</h1></header>
+    <p th:if="${error}" th:text="${error}" class="cc-alert cc-alert-warning" role="alert"></p>
+    <p th:if="${items.isEmpty()}">No tienes reproducciones pendientes.</p>
+    <ul th:unless="${items.isEmpty()}">
+        <li th:each="item : ${items}">
+            <strong th:text="${item.title()}">Título</strong>
+            <span th:if="${item.episodeTitle() != null}" th:text="${item.episodeTitle()}">Episodio</span>
+            <p>Posición guardada: <span th:text="${item.position()}">0</span> segundos</p>
+            <form th:action="@{/viewing/profiles/{profile}/continue-watching/{id}(profile=${profileId},id=${item.sessionId()})}"
+                  method="post">
+                <button type="submit" class="cc-btn cc-btn-primary">Continuar</button>
+            </form>
+        </li>
+    </ul>
+</main>
+</body>
+</html>

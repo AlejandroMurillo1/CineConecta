@@ -7,6 +7,9 @@
 // En Docker lo ejecuta el contenedor solo (docker-entrypoint-initdb.d).
 //
 // Colecciones: contents, my_lists, playback_sessions, admin_users.
+// El validador de contents sigue el modelo que persiste el módulo catalog
+// (Spring Data MongoDB): enums en inglés, metadatos en la raíz y los datos
+// propios de cada tipo en el subdocumento polimórfico contentDetails.
 // No hay playback_progress: "Continuar viendo" se calcula desde
 // playback_sessions con el índice { profileId: 1, startedAt: -1 }.
 // =============================================================================
@@ -17,6 +20,7 @@ const cine = db.getSiblingDB(DB_NAME);
 // ---------------------------------------------------------------- utilidades
 const text = { bsonType: 'string', minLength: 1 };
 const textList = (minItems) => ({ bsonType: 'array', minItems, uniqueItems: true, items: text });
+const patternList = (minItems, pattern) => ({ bsonType: 'array', minItems, items: { bsonType: 'string', pattern } });
 const positiveInt = { bsonType: 'int', minimum: 1 };
 
 function createWithValidator(name, schema) {
@@ -30,19 +34,33 @@ function createWithValidator(name, schema) {
 }
 
 // =============================================================================
-// contents — catálogo polimórfico (película, serie, documental)
+// contents — catálogo polimórfico (MOVIE, SERIES, DOCUMENTARY)
 //
-// Regla: un BORRADOR solo exige lo mínimo para guardarse. Para estar PUBLICADO
-// o RETIRADO, el documento debe cumplir los obligatorios de su tipo
-// (anyOf de abajo). Así, "publicar" equivale a pasar esta validación.
+// Forma del documento (la escribe Spring Data desde la clase Content):
+//   - metadatos comunes en la raíz (title, synopsis, year, ageRating, posterUrl,
+//     genres, countries, audioLanguages, subtitleLanguages...), obligatorios desde
+//     la creación: la aplicación no guarda borradores incompletos;
+//   - contentDetails: subdocumento con los datos propios del tipo. Spring Data
+//     agrega _class con el alias del tipo ("MOVIE", "SERIES", "DOCUMENTARY");
+//   - version: control de concurrencia optimista (@Version);
+//   - titleNormalized: título sin tildes ni mayúsculas, para buscar y para
+//     impedir duplicados (título + año).
+//
+// Regla por estado: una serie en borrador puede quedar sin temporadas o con
+// temporadas vacías; publicada o retirada debe tener al menos una temporada y
+// cada temporada al menos un episodio.
 // No se usa additionalProperties: false, para que el catálogo pueda evolucionar
-// (campos nuevos + schemaVersion).
+// (campos nuevos + schemaVersion) y para admitir el campo _class de Spring Data.
 // =============================================================================
+const COUNTRY = '^[A-Z]{2}$';
+const LANGUAGE = '^[a-z]{2,3}(-[A-Za-z]{2,4})?$';
+const UUID = '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$';
+
 const episode = {
   bsonType: 'object',
   required: ['episodeId', 'number', 'title', 'synopsis', 'durationSeconds'],
   properties: {
-    episodeId: { bsonType: 'objectId' },
+    episodeId: { bsonType: 'string', pattern: UUID, description: 'UUID generado por la aplicación; no cambia' },
     number: positiveInt,
     title: text,
     synopsis: text,
@@ -60,83 +78,76 @@ const seasonWith = (minEpisodes) => ({
   },
 });
 
-const contentProperties = {
-  _id: { bsonType: 'objectId' },
-  type: { enum: ['PELICULA', 'SERIE', 'DOCUMENTAL'] },
-  title: text,
-  synopsis: text,
-  releaseYear: { bsonType: 'int', minimum: 1888, maximum: 2100 },
-  genres: textList(0),
-  countries: textList(0),
-  audioLanguages: textList(0),
-  subtitleLanguages: textList(0),
-  ageRating: { bsonType: 'int', minimum: 0, maximum: 18 },
-  coverUrl: { bsonType: 'string', pattern: '^https?://' },
-  status: { enum: ['BORRADOR', 'PUBLICADO', 'RETIRADO'] },
-  schemaVersion: positiveInt,
-  createdAt: { bsonType: 'date' },
-  updatedAt: { bsonType: 'date' },
-  publishedAt: { bsonType: ['date', 'null'] },
-  retiredAt: { bsonType: ['date', 'null'] },
-  // película y documental
-  durationSeconds: positiveInt,
-  directors: textList(0),
-  // película
-  cast: {
-    bsonType: 'array',
-    items: {
-      bsonType: 'object',
-      required: ['person'],
-      properties: { person: text, character: text },   // personaje: opcional
+const movieDetails = {
+  bsonType: 'object',
+  required: ['durationSeconds', 'directors', 'cast'],
+  properties: {
+    durationSeconds: positiveInt,
+    directors: textList(1),
+    cast: {
+      bsonType: 'array',
+      minItems: 1,
+      items: {
+        bsonType: 'object',
+        required: ['name'],
+        properties: { name: text, character: text },   // personaje: opcional ("cuando se conozca")
+      },
     },
   },
-  // documental (todos opcionales: "cuando corresponda")
-  topics: textList(0),
-  interviewees: textList(0),
-  sources: {
-    bsonType: 'array',
-    items: {
-      bsonType: 'object',
-      required: ['name'],
-      properties: { name: text, description: text },
-    },
-  },
-  // serie
-  seasons: { bsonType: 'array', items: seasonWith(0) },
 };
 
-const COMMON_REQUIRED = ['synopsis', 'releaseYear', 'genres', 'countries', 'audioLanguages',
-  'subtitleLanguages', 'ageRating', 'coverUrl'];
-const COMPLETE_COMMON = {
-  genres: textList(1),
-  countries: textList(1),
-  audioLanguages: textList(1),
-  // subtitleLanguages puede quedar vacío (decisión abierta del equipo).
+const documentaryDetails = {
+  bsonType: 'object',
+  required: ['durationSeconds', 'directors', 'topics'],
+  properties: {
+    durationSeconds: positiveInt,       // una sola pieza
+    directors: textList(1),
+    topics: textList(1),
+    interviewees: textList(0),          // opcional ("cuando corresponda")
+    sources: textList(0),               // opcional: fuentes o instituciones participantes
+  },
 };
+
+const seriesDetails = (minSeasons, minEpisodes) => ({
+  bsonType: 'object',
+  required: ['seasons'],
+  properties: {
+    seasons: { bsonType: 'array', minItems: minSeasons, items: seasonWith(minEpisodes) },
+  },
+});
 
 const contentsSchema = {
   bsonType: 'object',
   title: 'Contenido del catálogo',
-  required: ['type', 'title', 'status', 'schemaVersion', 'createdAt', 'updatedAt'],
-  properties: contentProperties,
+  required: ['type', 'status', 'title', 'titleNormalized', 'synopsis', 'year', 'ageRating', 'posterUrl',
+    'genres', 'countries', 'audioLanguages', 'subtitleLanguages', 'schemaVersion', 'createdAt', 'updatedAt',
+    'contentDetails'],
+  properties: {
+    _id: { bsonType: 'objectId' },
+    version: { bsonType: ['int', 'long'], minimum: 0 },
+    type: { enum: ['MOVIE', 'SERIES', 'DOCUMENTARY'] },
+    status: { enum: ['DRAFT', 'PUBLISHED', 'RETIRED'] },
+    title: { bsonType: 'string', minLength: 1, maxLength: 200 },
+    titleNormalized: text,
+    synopsis: { bsonType: 'string', minLength: 1, maxLength: 2000 },
+    year: { bsonType: 'int', minimum: 1888, maximum: 2100 },
+    ageRating: { bsonType: 'int', minimum: 0, maximum: 18 },
+    posterUrl: { bsonType: 'string', pattern: '^https?://\\S+$' },
+    genres: textList(1),
+    countries: patternList(1, COUNTRY),
+    audioLanguages: patternList(1, LANGUAGE),
+    subtitleLanguages: patternList(0, LANGUAGE),
+    schemaVersion: positiveInt,
+    createdAt: { bsonType: 'date' },
+    updatedAt: { bsonType: 'date' },
+    contentDetails: { bsonType: 'object' },
+  },
+  // Los datos de contentDetails dependen del tipo (y, en series, del estado).
   anyOf: [
-    // 1) Borrador: basta con lo de arriba.
-    { properties: { status: { enum: ['BORRADOR'] } } },
-    // 2) Película completa.
-    {
-      properties: { ...COMPLETE_COMMON, type: { enum: ['PELICULA'] }, directors: textList(1), cast: { bsonType: 'array', minItems: 1 } },
-      required: [...COMMON_REQUIRED, 'durationSeconds', 'directors', 'cast'],
-    },
-    // 3) Documental completo (una sola pieza).
-    {
-      properties: { ...COMPLETE_COMMON, type: { enum: ['DOCUMENTAL'] }, directors: textList(1) },
-      required: [...COMMON_REQUIRED, 'durationSeconds', 'directors'],
-    },
-    // 4) Serie completa: al menos una temporada, cada una con al menos un episodio.
-    {
-      properties: { ...COMPLETE_COMMON, type: { enum: ['SERIE'] }, seasons: { bsonType: 'array', minItems: 1, items: seasonWith(1) } },
-      required: [...COMMON_REQUIRED, 'seasons'],
-    },
+    { properties: { type: { enum: ['MOVIE'] }, contentDetails: movieDetails } },
+    { properties: { type: { enum: ['DOCUMENTARY'] }, contentDetails: documentaryDetails } },
+    { properties: { type: { enum: ['SERIES'] }, status: { enum: ['DRAFT'] }, contentDetails: seriesDetails(0, 0) } },
+    { properties: { type: { enum: ['SERIES'] }, status: { enum: ['PUBLISHED', 'RETIRED'] }, contentDetails: seriesDetails(1, 1) } },
   ],
 };
 
@@ -169,21 +180,22 @@ const playbackSessionsSchema = {
     accountId: { bsonType: 'int', minimum: 1, description: 'accountId de PostgreSQL' },
     profileId: { bsonType: 'int', minimum: 1, description: 'profileId de PostgreSQL' },
     contentId: { bsonType: 'objectId' },
-    episodeId: { bsonType: 'objectId' },
-    contentType: { enum: ['PELICULA', 'SERIE', 'DOCUMENTAL'] },
+    episodeId: { bsonType: 'string', pattern: UUID, description: 'episodeId de contents (UUID)' },
+    contentType: { enum: ['MOVIE', 'SERIES', 'DOCUMENTARY'] },
     durationSeconds: positiveInt,
     planIdAtStart: { bsonType: 'int', minimum: 1, description: 'planId de la suscripción vigente al iniciar' },
     startedAt: { bsonType: 'date' },
     endedAt: { bsonType: ['date', 'null'] },
+    lastActivityAt: { bsonType: 'date', description: 'último control o aviso recibido del reproductor' },
     playingSince: { bsonType: ['date', 'null'], description: 'interno: inicio del tramo en reproducción; null en pausa' },
     watchedSeconds: { bsonType: 'int', minimum: 0, description: 'tiempo real visto, sin saltos' },
     lastPosition: { bsonType: 'int', minimum: 0 },
     finished: { bsonType: 'bool', description: 'el usuario la finalizó con el control "finalizar"' },
   },
-  // Las series se reproducen por episodio: episodeId obligatorio solo en SERIE.
+  // Las series se reproducen por episodio: episodeId obligatorio solo en SERIES.
   anyOf: [
-    { properties: { contentType: { enum: ['SERIE'] } }, required: ['episodeId'] },
-    { properties: { contentType: { enum: ['PELICULA', 'DOCUMENTAL'] } } },
+    { properties: { contentType: { enum: ['SERIES'] } }, required: ['episodeId'] },
+    { properties: { contentType: { enum: ['MOVIE', 'DOCUMENTARY'] } } },
   ],
 };
 

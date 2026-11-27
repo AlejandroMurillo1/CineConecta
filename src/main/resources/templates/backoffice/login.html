@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar sesión — Administración CineConecta</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="stylesheet" th:href="@{/css/backoffice.css}">
+</head>
+<body class="bo-login-page">
+<main class="cc-card bo-login-card">
+    <h1>Administración</h1>
+    <p class="cc-muted">Acceso exclusivo para administradores de CineConecta.</p>
+
+    <div th:if="${param.error != null}" class="cc-alert cc-alert-danger">
+        Correo o contraseña incorrectos.
+    </div>
+    <div th:if="${param.logout != null}" class="cc-alert cc-alert-info">
+        Cerraste la sesión.
+    </div>
+
+    <form class="bo-login-form" th:action="@{/admin/login}" method="post">
+        <label>Correo
+            <input type="email" name="email" autocomplete="username" required autofocus>
+        </label>
+        <label>Contraseña
+            <input type="password" name="password" autocomplete="current-password" required>
+        </label>
+        <button type="submit" class="cc-btn cc-btn-primary">Ingresar</button>
+    </form>
+</main>
+</body>
+</html>

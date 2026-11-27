@@ -8,24 +8,30 @@ const DB_NAME = (typeof process !== 'undefined' && (process.env.CINE_DB || proce
 const cine = db.getSiblingDB(DB_NAME);
 
 // ---------------------------------------------------------------- contents
-// Búsqueda por título (palabras, con reglas del español).
-cine.contents.createIndex({ title: 'text' }, { name: 'tx_contents_title', default_language: 'spanish' });
+// Búsqueda del cliente (módulo catalog): status = PUBLISHED y ageRating <= clasificación del
+// perfil, con filtros opcionales de tipo, género, idioma de audio, año y título.
+// Regla ESR (Equality, Sort, Range): primero las igualdades y al final el rango (ageRating).
+cine.contents.createIndex({ status: 1, type: 1, ageRating: 1 }, { name: 'ix_contents_status_type_age' });
 
-// Búsqueda del cliente: solo publicados, filtrando por tipo y año.
-// También sirve al listado del administrador (estado + tipo).
-cine.contents.createIndex({ status: 1, type: 1, releaseYear: -1 }, { name: 'ix_contents_status_type_year' });
-
-// Filtros por género e idioma. Son arreglos (índices multikey); MongoDB no
+// Filtros por género e idioma de audio. Son arreglos (índices multikey); MongoDB no
 // permite dos arreglos en un mismo índice compuesto, por eso van separados.
-cine.contents.createIndex({ status: 1, genres: 1 }, { name: 'ix_contents_status_genres' });
-cine.contents.createIndex({ status: 1, audioLanguages: 1 }, { name: 'ix_contents_status_audio' });
-cine.contents.createIndex({ status: 1, subtitleLanguages: 1 }, { name: 'ix_contents_status_subtitles' });
+cine.contents.createIndex({ status: 1, genres: 1, ageRating: 1 }, { name: 'ix_contents_status_genres_age' });
+cine.contents.createIndex({ status: 1, audioLanguages: 1, ageRating: 1 }, { name: 'ix_contents_status_audio_age' });
 
-// Resolver un episodio por su identificador y garantizar que no se repita
-// entre series. Parcial: solo documentos que ya tienen episodios.
+// Sin duplicados en el catálogo: un mismo título normalizado (sin tildes ni mayúsculas)
+// no puede repetirse en el mismo año. La aplicación traduce la violación a un mensaje.
+// También sirve a la búsqueda por título, que es un "contiene" sobre titleNormalized.
+cine.contents.createIndex({ titleNormalized: 1, year: 1 }, { name: 'ux_contents_title_year', unique: true });
+
+// Resolver un episodio por su identificador y garantizar que no se repita entre series.
+// Parcial: solo documentos que ya tienen episodios.
 cine.contents.createIndex(
-  { 'seasons.episodes.episodeId': 1 },
-  { name: 'ux_contents_episode_id', unique: true, partialFilterExpression: { 'seasons.episodes.episodeId': { $exists: true } } },
+  { 'contentDetails.seasons.episodes.episodeId': 1 },
+  {
+    name: 'ux_contents_episode_id',
+    unique: true,
+    partialFilterExpression: { 'contentDetails.seasons.episodes.episodeId': { $exists: true } },
+  },
 );
 
 // ---------------------------------------------------------------- my_lists

@@ -1,0 +1,37 @@
+/* Complementa app.css (variables y componentes cc-*) para las pantallas de informes. */
+
+.rp-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.rp-filters label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    color: var(--cc-muted);
+    font-size: 0.9rem;
+}
+
+.rp-filters input[type="date"] {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--cc-border);
+    border-radius: 6px;
+    background: var(--cc-surface-soft);
+    color: var(--cc-text);
+    font: inherit;
+    color-scheme: dark;
+}
+
+.rp-num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.rp-total td {
+    font-weight: 700;
+    border-top: 2px solid var(--cc-border);
+}

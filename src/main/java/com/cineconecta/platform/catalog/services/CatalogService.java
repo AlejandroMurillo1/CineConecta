@@ -70,11 +70,11 @@ public class CatalogService {
     }
 
     // ------------------------------------------------------------------ publicar y retirar
-    /** BORRADOR -> PUBLICADO, si cumple las reglas de publicación de su tipo. */
+    /** BORRADOR o RETIRADO -> PUBLICADO, si cumple las reglas de publicación de su tipo. */
     public ContentView publishContent(String id, long expectedVersion) {
-        Content content = store.getForUpdate(id, expectedVersion);
-        if (content.getStatus() != ContentStatus.DRAFT) {
-            throw new ContentRuleException("Solo se puede publicar un contenido en borrador (estado actual: "
+        Content content = store.getForRepublish(id, expectedVersion);
+        if (content.getStatus() != ContentStatus.DRAFT && content.getStatus() != ContentStatus.RETIRED) {
+            throw new ContentRuleException("Solo se puede publicar un contenido en borrador o retirado (estado actual: "
                     + content.getStatus() + ")");
         }
         strategyFor(content.getType()).assertPublishable(content.getContentDetails());
@@ -84,12 +84,22 @@ public class CatalogService {
     }
 
     /**
-     * BORRADOR o PUBLICADO -> RETIRADO. Es definitivo y no borra nada: el historial conserva sus
-     * referencias y el identificador no se reutiliza. Un contenido retirado ya no admite cambios.
+     * BORRADOR o PUBLICADO -> RETIRADO. Conserva las referencias históricas y el identificador.
      */
     public ContentView retireContent(String id, long expectedVersion) {
         Content content = store.getForUpdate(id, expectedVersion);
         content.setStatus(ContentStatus.RETIRED);
+        content.setUpdatedAt(Instant.now());
+        return ContentMapper.toView(store.save(content));
+    }
+
+    /** Permite editar un retirado solo después de reactivarlo como borrador mediante un flujo explícito. */
+    public ContentView restoreAsDraft(String id, long expectedVersion) {
+        Content content = store.getForRepublish(id, expectedVersion);
+        if (content.getStatus() != ContentStatus.RETIRED) {
+            throw new ContentRuleException("Solo se puede restaurar un contenido retirado");
+        }
+        content.setStatus(ContentStatus.DRAFT);
         content.setUpdatedAt(Instant.now());
         return ContentMapper.toView(store.save(content));
     }
