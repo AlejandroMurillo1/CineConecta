@@ -1,11 +1,14 @@
 package com.cineconecta.platform.billing.internal.service;
 
+import com.cineconecta.platform.billing.AdminPlanView;
 import com.cineconecta.platform.billing.PlanApi;
 import com.cineconecta.platform.billing.PlanRevenueRow;
 import com.cineconecta.platform.billing.PlanSummaryView;
 import com.cineconecta.platform.billing.RevenueApi;
 import com.cineconecta.platform.billing.SubscriptionApi;
 import com.cineconecta.platform.billing.SubscriptionView;
+import com.cineconecta.platform.billing.internal.exceptions.DuplicatePlanNameException;
+import com.cineconecta.platform.billing.internal.exceptions.PlanNotFoundException;
 import com.cineconecta.platform.billing.internal.persistence.PaymentEntity;
 import com.cineconecta.platform.billing.internal.persistence.PaymentRepository;
 import com.cineconecta.platform.billing.internal.persistence.PlanEntity;
@@ -94,6 +97,55 @@ public class BillingQueryService implements SubscriptionApi, PlanApi, RevenueApi
                         (a, b) -> a,
                         LinkedHashMap::new
                 ));
+    }
+
+    @Override
+    public List<AdminPlanView> listPlansForAdmin() {
+        Map<Integer, Long> activeByPlan = subscriptionRepository.countActiveByPlanAt(clock.instant()).stream()
+                .collect(Collectors.toMap(
+                        row -> ((Number) row[0]).intValue(),
+                        row -> ((Number) row[1]).longValue()
+                ));
+        return planRepository.findAllByOrderByPriceAsc().stream()
+                .map(plan -> toAdminPlanView(plan, activeByPlan.getOrDefault(plan.getPlanId(), 0L)))
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public AdminPlanView createPlan(String name, BigDecimal price, int maxProfiles) {
+        String cleanName = requireName(name);
+        if (price == null || price.signum() <= 0) {
+            throw new IllegalArgumentException("El precio debe ser mayor que cero.");
+        }
+        if (maxProfiles < 1 || maxProfiles > 10) {
+            throw new IllegalArgumentException("El máximo de perfiles debe estar entre 1 y 10.");
+        }
+        if (planRepository.existsByNameIgnoreCase(cleanName)) {
+            throw new DuplicatePlanNameException(cleanName);
+        }
+        PlanEntity saved = planRepository.save(new PlanEntity(cleanName, price, maxProfiles, "Y"));
+        return toAdminPlanView(saved, 0L);
+    }
+
+    @Override
+    @Transactional
+    public void setPlanActive(int planId, boolean active) {
+        PlanEntity plan = planRepository.findById(planId)
+                .orElseThrow(() -> new PlanNotFoundException(planId));
+        plan.setActive(active);
+    }
+
+    @Override
+    @Transactional
+    public void renamePlan(int planId, String newName) {
+        String cleanName = requireName(newName);
+        PlanEntity plan = planRepository.findById(planId)
+                .orElseThrow(() -> new PlanNotFoundException(planId));
+        if (planRepository.existsByNameIgnoreCaseAndPlanIdNot(cleanName, planId)) {
+            throw new DuplicatePlanNameException(cleanName);
+        }
+        plan.rename(cleanName);
     }
 
     @Override
@@ -187,6 +239,28 @@ public class BillingQueryService implements SubscriptionApi, PlanApi, RevenueApi
                 plan.getMaxProfiles(),
                 sub.getStartsAt(),
                 sub.getEndsAt()
+        );
+    }
+
+    private static String requireName(String name) {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("El nombre del plan es obligatorio.");
+        }
+        String clean = name.strip();
+        if (clean.length() > 50) {
+            throw new IllegalArgumentException("El nombre del plan no puede superar 50 caracteres.");
+        }
+        return clean;
+    }
+
+    private static AdminPlanView toAdminPlanView(PlanEntity plan, long activeSubscriptions) {
+        return new AdminPlanView(
+                plan.getPlanId(),
+                plan.getName(),
+                plan.getPrice(),
+                plan.getMaxProfiles(),
+                plan.isActiveFlag(),
+                activeSubscriptions
         );
     }
 

@@ -6,14 +6,12 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import org.hibernate.annotations.Immutable;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 
 @Entity
-@Immutable
 @Table(name = "plans", schema = "cineconecta")
 public class PlanEntity {
 
@@ -66,5 +64,14 @@ public class PlanEntity {
 
     public boolean isActiveFlag() {
         return "Y".equalsIgnoreCase(isActive);
+    }
+
+    // Solo name e isActive se pueden modificar (GRANT UPDATE (name, isActive) a cine_app).
+    public void rename(String newName) {
+        this.name = newName;
+    }
+
+    public void setActive(boolean active) {
+        this.isActive = active ? "Y" : "N";
     }
 }
