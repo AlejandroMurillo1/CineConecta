@@ -52,9 +52,13 @@ public class WatchedTitlesAdvice {
         }
     }
 
+    /**
+     * Sesiones reanudables por título, solo para el detalle ({@code /catalog/{id}}): es la única pantalla
+     * que las usa y, si no, esta consulta se ejecutaría en cada petición del catálogo.
+     */
     @ModelAttribute("resumableSessions")
     public java.util.Map<String, String> resumableSessions(HttpServletRequest request) {
-        if (request.getRequestURI().startsWith(request.getContextPath() + "/admin")) {
+        if (!isCatalogDetail(request)) {
             return java.util.Map.of();
         }
         CurrentProfile profiles = currentProfile.getIfAvailable();
@@ -68,5 +72,15 @@ public class WatchedTitlesAdvice {
             log.warn("No se pudo consultar sesiones reanudables del perfil", error);
             return java.util.Map.of();
         }
+    }
+
+    private static boolean isCatalogDetail(HttpServletRequest request) {
+        String prefix = request.getContextPath() + "/catalog/";
+        String uri = request.getRequestURI();
+        if (!uri.startsWith(prefix)) {
+            return false;
+        }
+        String rest = uri.substring(prefix.length());
+        return !rest.isEmpty() && rest.indexOf('/') < 0;
     }
 }
