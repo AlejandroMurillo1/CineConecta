@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 600" width="400" height="600" role="img" aria-label="Proyecto">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3b3f4a"/>
+      <stop offset="1" stop-color="#15171c"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="600" fill="url(#g)"/>
+  <g stroke="#c9ccd3" stroke-width="2" opacity="0.5" fill="none"><rect x="60" y="90" width="280" height="300" stroke-dasharray="10 8"/><line x1="60" y1="90" x2="340" y2="390"/><line x1="340" y1="90" x2="60" y2="390"/></g>
+  <rect x="0" y="430" width="400" height="170" fill="#000" opacity="0.35"/>
+  <text x="32" y="500" font-family="Georgia, 'Times New Roman', serif" font-size="38" font-weight="700" fill="#fff">Proyecto</text>
+  <text x="32" y="545" font-family="Arial, Helvetica, sans-serif" font-size="18" letter-spacing="4" fill="#fff" opacity="0.8">SIN TERMINAR</text>
+</svg>

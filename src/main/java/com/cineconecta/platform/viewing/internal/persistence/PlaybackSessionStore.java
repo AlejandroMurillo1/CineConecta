@@ -51,7 +51,8 @@ public class PlaybackSessionStore implements ConsumptionApi {
                 .append("lastActivityAt", toDate(session.lastActivityAt()));
 
         if (session.episodeId() != null) {
-            document.append("episodeId", new ObjectId(session.episodeId()));
+            // Los episodios se identifican con un UUID en texto (contents.contentDetails...episodeId).
+            document.append("episodeId", session.episodeId());
         }
         collection().insertOne(document);
     }
@@ -84,6 +85,23 @@ public class PlaybackSessionStore implements ConsumptionApi {
             return new ConsumptionRow(key.getInteger("planId"), readType(key.getString("type")),
                     minutes, document.get("distinctProfiles", Number.class).longValue());
         }).into(new ArrayList<>());
+    }
+
+    /**
+     * Títulos (y episodios) que el perfil ya vio: sesiones finalizadas o con la posición en el 90 %
+     * o más de la duración. Es la misma regla que {@code PlaybackSession.completed()}.
+     */
+    public List<com.cineconecta.platform.catalog.PlaybackKey> completedKeys(int accountId, int profileId) {
+        var reachedNinetyPercent = expr(new Document("$gte", List.of(
+                new Document("$multiply", List.of("$lastPosition", 10)),
+                new Document("$multiply", List.of("$durationSeconds", 9)))));
+        return collection()
+                .find(and(eq("accountId", accountId), eq("profileId", profileId),
+                        or(eq("finished", true), reachedNinetyPercent)))
+                .projection(new Document("contentId", 1).append("episodeId", 1))
+                .map(document -> new com.cineconecta.platform.catalog.PlaybackKey(
+                        document.getObjectId("contentId").toHexString(), document.getString("episodeId")))
+                .into(new ArrayList<>());
     }
 
     public List<PlaybackSession> latestPerTitle(int accountId, int profileId) {
@@ -123,11 +141,11 @@ public class PlaybackSessionStore implements ConsumptionApi {
     }
 
     private PlaybackSession read(Document document) {
-        ObjectId episode = document.getObjectId("episodeId");
+        String episode = document.getString("episodeId");
         return new PlaybackSession(document.getObjectId("_id").toHexString(),
                 document.getInteger("accountId"), document.getInteger("profileId"),
                 document.getObjectId("contentId").toHexString(),
-                episode == null ? null : episode.toHexString(), readType(document.getString("contentType")),
+                episode, readType(document.getString("contentType")),
                 document.getInteger("planIdAtStart"), document.getInteger("durationSeconds"),
                 toInstant(document.getDate("startedAt")), toInstant(document.getDate("playingSince")),
                 toInstant(document.getDate("endedAt")), document.getInteger("watchedSeconds"),
@@ -149,21 +167,17 @@ public class PlaybackSessionStore implements ConsumptionApi {
         return mongo.getCollection("playback_sessions");
     }
 
+    /** Mismos valores que contents.type y que el validador de playback_sessions: MOVIE, SERIES, DOCUMENTARY. */
     private static String storedType(ContentType type) {
-        return switch (type) {
-            case MOVIE -> "PELICULA";
-            case DOCUMENTARY -> "DOCUMENTAL";
-            case SERIES -> "SERIE";
-        };
+        return type.name();
     }
 
     private static ContentType readType(String type) {
-        return switch (type) {
-            case "PELICULA" -> ContentType.MOVIE;
-            case "DOCUMENTAL" -> ContentType.DOCUMENTARY;
-            case "SERIE" -> ContentType.SERIES;
-            default -> throw new IllegalArgumentException("Tipo de contenido desconocido: " + type);
-        };
+        try {
+            return ContentType.valueOf(type);
+        } catch (IllegalArgumentException | NullPointerException error) {
+            throw new IllegalArgumentException("Tipo de contenido desconocido: " + type, error);
+        }
     }
 
     private static Date toDate(Instant instant) {

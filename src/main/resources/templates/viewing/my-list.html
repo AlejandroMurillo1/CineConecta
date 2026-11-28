@@ -1,38 +1,31 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Mi lista | CineConecta</title>
-    <link rel="stylesheet" th:href="@{/css/app.css}">
-</head>
+<head th:replace="~{shared/layout :: head('Mi lista', ~{})}"></head>
 <body>
-<nav class="cc-navbar">
-    <a class="cc-brand" th:href="@{/billing/plans}">CineConecta</a>
-</nav>
-<main class="cc-container">
-    <header class="cc-header"><h1>Mi lista</h1></header>
-    <p><a th:href="@{/viewing/continue-watching}">Continuar viendo</a></p>
-    <p><a th:href="@{/viewing/player}">Abrir reproductor simulado</a></p>
+<nav th:replace="~{shared/layout :: navbar('my-list')}"></nav>
+
+<main id="main" class="cc-container">
+    <header class="cc-header">
+        <h1>Mi lista</h1>
+        <p class="cc-muted">Agrega títulos desde su detalle en el <a th:href="@{/catalog}">catálogo</a>.
+            · <a th:href="@{/viewing/continue-watching}">Continuar viendo</a></p>
+    </header>
 
     <p th:if="${error}" th:text="${error}" class="cc-alert cc-alert-warning" role="alert"></p>
-    <form th:action="@{/viewing/my-list}" method="post" class="cc-card">
-        <label for="contentId">ID del título</label>
-        <input id="contentId" name="contentId" type="text" required>
-        <button type="submit" class="cc-btn cc-btn-primary">Agregar a mi lista</button>
-    </form>
 
-    <p th:if="${titles.isEmpty()}">Todavía no has guardado títulos.</p>
-    <ul th:unless="${titles.isEmpty()}">
+    <p th:if="${titles.isEmpty()}" class="cc-card">Todavía no has guardado títulos.</p>
+    <ul th:unless="${titles.isEmpty()}" class="cc-card">
         <li th:each="title : ${titles}">
-            <strong th:text="${title.title()}">Título</strong>
-            <span th:if="${!title.status().isEmpty()}" th:text="${title.status()}">Retirado</span>
-            <form th:action="@{/viewing/my-list/remove}" method="post">
+            <a th:href="@{/catalog/{id}(id=${title.id()})}"><strong th:text="${title.title()}">Título</strong></a>
+            <span th:if="${!title.status().isEmpty()}" class="cc-muted" th:text="${title.status()}">Retirado</span>
+            <form th:action="@{/viewing/my-list/remove}" method="post" style="display:inline">
                 <input type="hidden" name="contentId" th:value="${title.id()}">
-                <button type="submit" class="cc-btn">Quitar de mi lista</button>
+                <button type="submit" class="cc-btn cc-btn-link">Quitar</button>
             </form>
         </li>
     </ul>
 </main>
+
+<footer th:replace="~{shared/layout :: footer}"></footer>
 </body>
 </html>

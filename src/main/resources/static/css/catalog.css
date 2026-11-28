@@ -336,3 +336,67 @@
         grid-column: span 1;
     }
 }
+
+/* ---------- Acciones del detalle (reproducir y Mi lista) ---------- */
+
+.cat-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 1rem;
+}
+
+.cat-actions form {
+    margin: 0;
+}
+
+.cat-episode-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.cat-episode-actions form {
+    margin: 0;
+}
+
+.cc-btn-sm {
+    padding: 0.3rem 0.7rem;
+    font-size: 0.85rem;
+}
+
+/* ---------- Ya visto ---------- */
+
+.cat-poster-frame {
+    position: relative;
+}
+
+.cat-watched-badge {
+    position: absolute;
+    top: 0.6rem;
+    left: 0.6rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    background: rgba(16, 185, 129, 0.92);
+    color: #fff;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.cat-watched-note {
+    flex-basis: 100%;
+    margin: 0;
+    color: var(--cc-success);
+    font-weight: 600;
+}
+
+.cat-watched-chip {
+    color: var(--cc-success);
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.cat-episode-list li.is-watched strong {
+    color: var(--cc-muted);
+}
+

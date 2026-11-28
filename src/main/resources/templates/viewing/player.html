@@ -1,56 +1,88 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Reproductor simulado | CineConecta</title>
-    <link rel="stylesheet" th:href="@{/css/app.css}">
-    <script th:src="@{/js/playback.js}" defer></script>
+<head th:replace="~{shared/layout :: head('Reproductor', ~{::link})}">
+    <link rel="stylesheet" th:href="@{/css/player.css}">
 </head>
 <body>
-<nav class="cc-navbar">
-    <a class="cc-brand" th:href="@{/viewing/my-list}">Mi lista</a>
-</nav>
-<main class="cc-container">
-    <header class="cc-header"><h1>Reproductor simulado</h1></header>
+<nav th:replace="~{shared/layout :: navbar('catalog')}"></nav>
+
+<main id="main" class="cc-container">
+    <a class="pl-back" th:if="${playable != null}"
+       th:href="@{/catalog/{id}(id=${playable.contentId()})}">← Volver al detalle</a>
+
+    <header class="cc-header">
+        <h1 th:text="${playable != null} ? ${playable.title()} : 'Reproductor'">Reproductor</h1>
+        <p class="cc-muted" th:if="${playable != null and playable.episodeTitle() != null}"
+           th:text="|Temporada ${playable.seasonNumber()} · Episodio ${playable.episodeNumber()}: ${playable.episodeTitle()}|">
+            Temporada 1 · Episodio 1</p>
+    </header>
+
     <p th:if="${error}" th:text="${error}" class="cc-alert cc-alert-warning" role="alert"></p>
 
-    <form th:unless="${playbackSession}" th:action="@{/viewing/player}"
-          method="post" class="cc-card">
-        <label for="titleId">ID del título</label>
-        <input id="titleId" name="contentId" required>
-        <label for="episodeId">ID del episodio (solo para series)</label>
-        <input id="episodeId" name="episodeId">
-        <button type="submit" class="cc-btn cc-btn-primary">Iniciar</button>
-    </form>
+    <th:block th:unless="${playbackSession}">
+        <section class="cc-card">
+            <p>Elige qué ver desde el <a th:href="@{/catalog}">catálogo</a>: en el detalle de cada título
+                está el botón <strong>Reproducir</strong> (en las series, uno por episodio).</p>
+            <p><a th:href="@{/viewing/continue-watching}">Continuar viendo</a> ·
+                <a th:href="@{/viewing/my-list}">Mi lista</a></p>
+        </section>
+    </th:block>
 
-    <section th:if="${playbackSession}" class="cc-card">
-        <p th:if="${playbackSession.endedAt() != null}">Reproducción cerrada.</p>
-        <p id="playback-time">
-            <span id="playback-position" th:text="${position}">0</span> /
-            <span th:text="${playbackSession.durationSeconds()}">0</span> segundos
-        </p>
-        <progress id="playback-progress" aria-label="Posición de reproducción"
-                  th:value="${position}" th:max="${playbackSession.durationSeconds()}"
-                  th:data-playing="${playbackSession.playingSince() != null}"></progress>
-        <form id="playback-checkpoint" hidden th:if="${playbackSession.playingSince() != null}"
+    <section th:if="${playbackSession}" class="cc-card pl-player"
+             th:with="ended=${playbackSession.endedAt() != null}, playing=${playbackSession.playingSince() != null}">
+        <!-- Reproductor simulado: no hay archivo de video. Cada control envía la acción al servidor,
+             que la guarda en playback_sessions (pausa, reanudar, ir a un punto). Al llegar al final
+             se envía FINISH y el servidor lleva al detalle del título. Una sesión cerrada no se
+             muestra aquí: se redirige al detalle, donde se puede volver a ver. -->
+        <div class="pl-screen" th:classappend="${playing} ? 'is-playing'">
+            <video id="playback-video" class="pl-video" preload="none" playsinline muted
+                   aria-label="Reproductor de video"
+                   th:data-position="${position}"
+                   th:data-duration="${playbackSession.durationSeconds()}"
+                   th:data-playing="${playing}"></video>
+
+            <span class="pl-status" th:text="${ended} ? 'Finalizada' : (${playing} ? 'Reproduciendo' : 'En pausa')">En pausa</span>
+
+            <button th:if="${!ended and !playing}" type="submit" form="playback-controls"
+                    name="action" value="RESUME" class="pl-big-play" aria-label="Reanudar">▶</button>
+
+            <form id="playback-controls" class="pl-controls" th:if="${!ended}"
+                  th:action="@{/viewing/player/{id}(id=${playbackSession.id()})}" method="post">
+                <input type="hidden" name="position" id="playback-seek-position">
+                <button type="submit" hidden id="playback-seek" name="action" value="SEEK">Ir</button>
+                <!-- No hay botón de finalizar: el reproductor la finaliza solo al llegar al final. -->
+                <button type="submit" hidden id="playback-finish" name="action" value="FINISH">Finalizar</button>
+
+                <div class="pl-track" id="playback-track" role="slider" tabindex="0"
+                     aria-label="Avance (clic para ir a ese punto)" aria-valuemin="0"
+                     th:aria-valuemax="${playbackSession.durationSeconds()}" th:aria-valuenow="${position}">
+                    <div id="playback-bar" class="pl-track-fill" th:style="|width: ${percent}%|"></div>
+                </div>
+
+                <div class="pl-controls-row">
+                    <button th:if="${playing}" type="submit" id="playback-pause" name="action" value="PAUSE"
+                            class="pl-icon-btn" aria-label="Pausar" title="Pausar">❚❚</button>
+                    <button th:if="${!playing}" type="submit" id="playback-resume" name="action" value="RESUME"
+                            class="pl-icon-btn" aria-label="Reanudar" title="Reanudar">▶</button>
+                    <span class="pl-time">
+                        <span id="playback-position" th:text="${positionText}">00:00:00</span>
+                        / <span th:text="${durationText}">00:00:00</span>
+                    </span>
+                </div>
+            </form>
+
+        </div>
+
+        <p class="cc-muted pl-hint" th:if="${!ended}">Clic en el video para pausar o reanudar · clic en la barra
+            para ir a ese punto · barra espaciadora para pausar o reanudar.</p>
+
+        <form id="playback-checkpoint" hidden th:if="${playing}"
               th:action="@{/viewing/player/{id}/checkpoint(id=${playbackSession.id()})}"
               method="post"></form>
-        <form id="playback-controls" th:if="${playbackSession.endedAt() == null}"
-              th:action="@{/viewing/player/{id}(id=${playbackSession.id()})}" method="post">
-            <button th:if="${playbackSession.playingSince() != null}" id="playback-pause"
-                    name="action" value="PAUSE" class="cc-btn">Pausar</button>
-            <button th:if="${playbackSession.playingSince() == null}"
-                    name="action" value="RESUME" class="cc-btn">Reanudar</button>
-            <label for="seekPosition">Ir al segundo</label>
-            <input id="seekPosition" name="position" type="number" min="0" th:max="${playbackSession.durationSeconds()}">
-            <button name="action" value="SEEK" class="cc-btn">Avanzar</button>
-            <button name="action" value="FINISH" class="cc-btn cc-btn-primary">Finalizar</button>
-        </form>
-        <a th:if="${playbackSession.endedAt() != null}" th:href="@{/viewing/player}">
-            Iniciar otra reproducción
-        </a>
     </section>
 </main>
+
+<footer th:replace="~{shared/layout :: footer}"></footer>
+<script th:src="@{/js/playback.js}" defer></script>
 </body>
 </html>

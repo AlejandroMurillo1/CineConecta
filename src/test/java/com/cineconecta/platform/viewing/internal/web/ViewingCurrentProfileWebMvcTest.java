@@ -7,6 +7,9 @@ import com.cineconecta.platform.accounts.internal.web.ProfileGuardAdvice;
 import com.cineconecta.platform.shared.PermitAllSecurityTestConfig;
 import com.cineconecta.platform.viewing.internal.service.MyListService;
 import com.cineconecta.platform.viewing.internal.service.PlaybackService;
+import com.cineconecta.platform.viewing.internal.service.PlaybackSession;
+import com.cineconecta.platform.catalog.ContentType;
+import com.cineconecta.platform.catalog.PlayableRef;
 import com.cineconecta.platform.viewing.internal.service.ViewingAccess;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +18,9 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -83,5 +88,62 @@ class ViewingCurrentProfileWebMvcTest {
     @Test
     void oldUrlsWithProfileIdNoLongerExist() throws Exception {
         mockMvc.perform(get("/viewing/profiles/7/my-list")).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void playerShowsAVideoAndTimesAsHoursMinutesSeconds() throws Exception {
+        when(currentProfile.require()).thenReturn(ANA);
+        Instant now = Instant.parse("2026-11-27T20:00:00Z");
+        var session = new PlaybackSession("6740a1f0c3b2a1d4e5f60099", 42, 7, "6740a1f0c3b2a1d4e5f60002", null,
+                ContentType.MOVIE, 2, 6300, now, null, null, 750, 750, false, 0, now);
+        when(playback.find(7, session.id())).thenReturn(session);
+        when(playback.currentPosition(session)).thenReturn(750);
+        when(playback.describe(session)).thenReturn(Optional.of(new PlayableRef(session.contentId(), null,
+                ContentType.MOVIE, "Noche en San Antonio", null, null, null, 6300, 16, "poster.jpg")));
+
+        mockMvc.perform(get("/viewing/player/" + session.id()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("<video")))
+                .andExpect(content().string(containsString("Noche en San Antonio")))
+                .andExpect(content().string(containsString("00:12:30")))
+                .andExpect(content().string(containsString("01:45:00")));
+    }
+
+    @Test
+    void seekAcceptsHoursMinutesSeconds() throws Exception {
+        when(currentProfile.require()).thenReturn(ANA);
+
+        mockMvc.perform(post("/viewing/player/s1").with(csrf()).param("action", "SEEK").param("position", "00:01:30"))
+                .andExpect(redirectedUrl("/viewing/player/s1"));
+        verify(playback).apply(7, "s1", PlaybackSession.Action.SEEK, 90);
+    }
+
+    @Test
+    void closedSessionGoesBackToTheDetailInsteadOfADeadPlayer() throws Exception {
+        when(currentProfile.require()).thenReturn(ANA);
+        Instant now = Instant.parse("2026-11-27T20:00:00Z");
+        var closed = new PlaybackSession("6740a1f0c3b2a1d4e5f60098", 42, 7, "6740a1f0c3b2a1d4e5f60002", null,
+                ContentType.MOVIE, 2, 6300, now, null, now.plusSeconds(6300), 6300, 6300, true, 3, now);
+        when(playback.find(7, closed.id())).thenReturn(closed);
+
+        mockMvc.perform(get("/viewing/player/" + closed.id()))
+                .andExpect(redirectedUrl("/catalog/6740a1f0c3b2a1d4e5f60002"));
+    }
+
+    @Test
+    void finishingAtTheEndGoesToTheDetailWithAMessage() throws Exception {
+        when(currentProfile.require()).thenReturn(ANA);
+        Instant now = Instant.parse("2026-11-27T20:00:00Z");
+        var closed = new PlaybackSession("s2", 42, 7, "6740a1f0c3b2a1d4e5f60002", null,
+                ContentType.MOVIE, 2, 6300, now, null, now.plusSeconds(6300), 6300, 6300, true, 3, now);
+        when(playback.find(7, "s2")).thenReturn(closed);
+        when(playback.describe(closed)).thenReturn(Optional.of(new PlayableRef(closed.contentId(), null,
+                ContentType.MOVIE, "Noche en San Antonio", null, null, null, 6300, 16, "poster.jpg")));
+
+        mockMvc.perform(post("/viewing/player/s2").with(csrf()).param("action", "FINISH"))
+                .andExpect(redirectedUrl("/catalog/6740a1f0c3b2a1d4e5f60002"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash()
+                        .attribute("success", "Terminaste de ver «Noche en San Antonio»."));
+        verify(playback).apply(7, "s2", PlaybackSession.Action.FINISH, null);
     }
 }
