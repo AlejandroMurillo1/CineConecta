@@ -37,7 +37,8 @@ public class AdminSecurityConfig {
                 .securityMatcher("/admin/**")
                 .authenticationProvider(provider)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/admin/login").permitAll()
+                        // La segunda ruta es el aviso de MongoDB no disponible (reenvío interno al fallar el login).
+                        .requestMatchers("/admin/login", AdminLoginFailureHandler.UNAVAILABLE_PATH).permitAll()
                         .anyRequest().hasRole(AdminPrincipal.ROLE))
                 .formLogin(form -> form
                         .loginPage("/admin/login")
@@ -46,7 +47,8 @@ public class AdminSecurityConfig {
                         .passwordParameter("password")
                         // Vuelve a la página protegida que se pidió; si no había ninguna, al panel.
                         .defaultSuccessUrl("/admin", false)
-                        .failureUrl("/admin/login?error"))
+                        // Credenciales incorrectas: /admin/login?error. MongoDB caído: 503 con aviso.
+                        .failureHandler(new AdminLoginFailureHandler()))
                 .logout(logout -> logout
                         .logoutUrl("/admin/logout")
                         .logoutSuccessUrl("/admin/login?logout")

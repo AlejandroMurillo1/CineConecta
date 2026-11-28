@@ -5,6 +5,7 @@ import com.cineconecta.platform.backoffice.internal.security.AdminPrincipal;
 import com.cineconecta.platform.backoffice.internal.security.AdminSecurityConfig;
 import com.cineconecta.platform.backoffice.internal.security.AdminUserStore;
 import com.cineconecta.platform.backoffice.internal.web.AdminController;
+import com.mongodb.MongoTimeoutException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +27,9 @@ import static org.springframework.security.test.web.servlet.response.SecurityMoc
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.forwardedUrl;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
@@ -127,5 +131,25 @@ class AdminSecurityWebMvcTest {
         mockMvc.perform(post("/admin/logout").with(user(new AdminPrincipal(ADMIN))).with(csrf()))
                 .andExpect(redirectedUrl("/admin/login?logout"))
                 .andExpect(unauthenticated());
+    }
+
+    @Test
+    void mongoDownAnswers503InsteadOfBadCredentials() throws Exception {
+        when(adminUsers.findByEmail(EMAIL)).thenThrow(new MongoTimeoutException("Sin servidor disponible"));
+
+        mockMvc.perform(post("/admin/login").param("email", EMAIL).param("password", PASSWORD).with(csrf()))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(header().string("Retry-After", "30"))
+                .andExpect(forwardedUrl("/admin/login/unavailable"))
+                .andExpect(unauthenticated());
+    }
+
+    @Test
+    void unavailableNoticeIsTheLoginPageWith503() throws Exception {
+        mockMvc.perform(get("/admin/login/unavailable"))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(view().name("backoffice/login"))
+                .andExpect(model().attribute("unavailable", true))
+                .andExpect(content().string(containsString("no responde")));
     }
 }

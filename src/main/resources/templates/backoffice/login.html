@@ -15,6 +15,10 @@
     <div th:if="${param.error != null}" class="cc-alert cc-alert-danger">
         Correo o contraseña incorrectos.
     </div>
+    <div th:if="${unavailable}" class="cc-alert cc-alert-warning" role="alert">
+        No pudimos verificar tus credenciales: el servicio de administradores no responde en este momento.
+        Intenta de nuevo en unos minutos.
+    </div>
     <div th:if="${param.logout != null}" class="cc-alert cc-alert-info">
         Cerraste la sesión.
     </div>
