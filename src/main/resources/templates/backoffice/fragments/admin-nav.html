@@ -4,13 +4,14 @@
 <!--
   Barra de navegación del panel de administración.
   Uso: <nav th:replace="~{backoffice/fragments/admin-nav :: nav('reports')}"></nav>
-  Valores de "active": home, catalog, reports, consumption (agregar más a medida que existan pantallas).
+  Valores de "active": home, catalog, plans, reports, consumption (agregar más a medida que existan pantallas).
 -->
 <nav th:fragment="nav(active)" class="cc-navbar">
     <a class="cc-brand" th:href="@{/admin}">CineConecta · Administración</a>
     <div class="cc-nav-links">
         <a th:classappend="${active == 'home'} ? 'active'" th:href="@{/admin}">Inicio</a>
         <a th:classappend="${active == 'catalog'} ? 'active'" th:href="@{/admin/contents}">Catálogo</a>
+        <a th:classappend="${active == 'plans'} ? 'active'" th:href="@{/admin/plans}">Planes</a>
         <a th:classappend="${active == 'reports'} ? 'active'" th:href="@{/admin/reports/revenue}">Ingresos por plan</a>
         <a th:classappend="${active == 'consumption'} ? 'active'" th:href="@{/admin/reports/consumption}">Consumo por plan</a>
         <th:block sec:authorize="hasRole('ADMIN')">

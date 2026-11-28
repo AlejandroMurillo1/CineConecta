@@ -12,7 +12,7 @@ import com.cineconecta.platform.billing.internal.persistence.PlanEntity;
 import com.cineconecta.platform.billing.internal.persistence.PlanRepository;
 import com.cineconecta.platform.billing.internal.persistence.SubscriptionEntity;
 import com.cineconecta.platform.billing.internal.persistence.SubscriptionRepository;
-import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -32,6 +32,12 @@ public class CheckoutService {
 
     public static final Duration SUBSCRIPTION_DURATION = Duration.ofHours(720);
     private static final String PG_EXCLUSION_VIOLATION = "23P01";
+    /**
+     * Sin el advisory lock, dos inserciones simultáneas con períodos superpuestos se esperan
+     * mutuamente en la restricción EXCLUDE; PostgreSQL resuelve el choque con 23P01 o abortando
+     * una de las dos con 40P01 (deadlock_detected). En ambos casos queda una sola suscripción.
+     */
+    private static final String PG_DEADLOCK_DETECTED = "40P01";
 
     private final PlanRepository planRepository;
     private final SubscriptionRepository subscriptionRepository;
@@ -112,8 +118,8 @@ public class CheckoutService {
         try {
             savedSubscription = subscriptionRepository.saveAndFlush(
                     new SubscriptionEntity(accountId, plan.getPlanId(), now, endsAt));
-        } catch (DataIntegrityViolationException ex) {
-            if (isExclusionViolation(ex)) {
+        } catch (DataAccessException ex) {
+            if (isConcurrentOverlap(ex)) {
                 throw new ConcurrentSubscriptionException(
                         "Se detectó una contratación simultánea con período superpuesto para esta cuenta.", ex);
             }
@@ -154,10 +160,12 @@ public class CheckoutService {
         });
     }
 
-    private static boolean isExclusionViolation(Throwable ex) {
+    private static boolean isConcurrentOverlap(Throwable ex) {
         Throwable cursor = ex;
         while (cursor != null) {
-            if (cursor instanceof SQLException sqlEx && PG_EXCLUSION_VIOLATION.equals(sqlEx.getSQLState())) {
+            if (cursor instanceof SQLException sqlEx
+                    && (PG_EXCLUSION_VIOLATION.equals(sqlEx.getSQLState())
+                        || PG_DEADLOCK_DETECTED.equals(sqlEx.getSQLState()))) {
                 return true;
             }
             cursor = cursor.getCause();

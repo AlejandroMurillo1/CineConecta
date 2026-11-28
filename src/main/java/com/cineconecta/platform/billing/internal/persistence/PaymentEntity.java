@@ -29,7 +29,7 @@ public class PaymentEntity {
     @Column(nullable = false, precision = 12, scale = 2, updatable = false)
     private BigDecimal amount;
 
-    @Column(nullable = false, length = 40, updatable = false, unique = true)
+    @Column(nullable = false, length = 100, updatable = false, unique = true)
     private String reference;
 
     protected PaymentEntity() {
