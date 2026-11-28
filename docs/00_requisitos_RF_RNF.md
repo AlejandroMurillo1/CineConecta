@@ -141,8 +141,8 @@ Los identificadores que cruzan bases (`accountId`, `profileId`, `planIdAtStart`,
 | RNF-03 | **Pago y suscripción en una única transacción**: si una operación falla, ninguna queda registrada. | Transacción única en billing + trigger diferido que rechaza, al confirmar, una suscripción sin pago. | `BillingTransactionIT` (fallo a mitad de la transacción; trigger) | ✅ |
 | RNF-04 | **Sin períodos superpuestos, ni siquiera con solicitudes simultáneas**, y sin superar el máximo de perfiles. | `pg_advisory_xact_lock(accountId)`, compartido por contratación y perfiles, + restricción `EXCLUDE` como segunda barrera. | `BillingTransactionIT` (dos contrataciones simultáneas), `ProfileRulesIT` (dos creaciones simultáneas) | ✅ |
 | RNF-05 | **Nada se borra y el historial no se modifica.** Perfiles, planes y contenidos se desactivan o retiran; las sesiones cerradas no cambian; los ids no se reutilizan. | Privilegios: `cine_app` sin `DELETE` y con solo `INSERT` en el historial. Los contenidos se retiran por estado. Secuencias IDENTITY. | `db/postgres/02_grants.sql`, `db/mongo/init/03_users.js` | ✅ |
-| RNF-06 | **Referencias entre bases verificadas por la aplicación**, sin suponer que una transacción relacional confirma o revierte escrituras en MongoDB. | Ids enteros de PostgreSQL copiados en MongoDB y verificados antes de escribir (perfil activo y de la cuenta, suscripción vigente, contenido publicado y clasificación). | `ViewingAccess`, `ProfileViewerContext`, `docs/data-model.md` §3 | 🟡 Falta el documento de integración con la matriz de fallos (`docs/03_integracion_y_fallos.md`, P5). |
-| RNF-07 | **Comportamiento definido si una base no está disponible o una operación se interrumpe.** | Respuesta 503 ("servicio no disponible", con `Retry-After`) que indica qué parte del servicio está afectada, sin detalles internos; detección en 5 s por base. El inicio de sesión de administradores también responde 503 si MongoDB no está disponible, en vez de "credenciales incorrectas". Una operación interrumpida en PostgreSQL se revierte completa. | `DatabaseUnavailableAdvice`, `AdminLoginFailureHandler`, `DatabaseTimeoutsConfig`, `DatabaseUnavailableWebMvcTest`, `AdminSecurityWebMvcTest` | ✅ La descripción de cada caso va en la matriz de fallos (RNF-06). |
+| RNF-06 | **Referencias entre bases verificadas por la aplicación**, sin suponer que una transacción relacional confirma o revierte escrituras en MongoDB. | Ids enteros de PostgreSQL copiados en MongoDB y verificados antes de escribir (perfil activo y de la cuenta, suscripción vigente, contenido publicado y clasificación). | `docs/03_integracion_y_fallos.md`, `ViewingAccess`, `ProfileViewerContext`, `docs/data-model.md` §3 | ✅ Ninguna operación escribe en las dos bases; matriz de fallos por base caída, operación interrumpida y cambio de estado. |
+| RNF-07 | **Comportamiento definido si una base no está disponible o una operación se interrumpe.** | Respuesta 503 ("servicio no disponible", con `Retry-After`) que indica qué parte del servicio está afectada, sin detalles internos; detección en 5 s por base. El inicio de sesión de administradores también responde 503 si MongoDB no está disponible, en vez de "credenciales incorrectas". Una operación interrumpida en PostgreSQL se revierte completa. | `DatabaseUnavailableAdvice`, `AdminLoginFailureHandler`, `DatabaseTimeoutsConfig`, `DatabaseUnavailableWebMvcTest`, `AdminSecurityWebMvcTest` | ✅ Cada caso está descrito en `docs/03_integracion_y_fallos.md` §5. |
 | RNF-08 | **El catálogo admite nuevas características sin afectar los contenidos existentes** y valida los datos obligatorios de cada tipo. | Documento polimórfico con validador `$jsonSchema` por tipo y `schemaVersion`. | `db/mongo/init/01_collections.js` | ✅ |
 | RNF-09 | **Fechas consistentes entre bases.** | Instantes en UTC (`TIMESTAMPTZ` en PostgreSQL, `Date` en MongoDB); la interfaz muestra la hora de Colombia. Vigencia `[inicio, fin)` evaluada con un único reloj (el de la aplicación). | `db/README.md` §1, `Clock` en `SharedConfig` | ✅ |
 
@@ -188,8 +188,8 @@ Los identificadores que cruzan bases (`accountId`, `profileId`, `planIdAtStart`,
 
 | Estado | RNF |
 |---|---|
-| ✅ Implementado | 24 |
-| 🟡 Parcial | 2: RNF-06, 17 |
+| ✅ Implementado | 25 |
+| 🟡 Parcial | 1: RNF-17 |
 | ⏳ Pendiente | 1: RNF-25 |
 
 ---
@@ -200,7 +200,7 @@ Los identificadores que cruzan bases (`accountId`, `profileId`, `planIdAtStart`,
 |---|---|---|---|
 | 1 | ~~Botones "Agregar a Mi lista" y "Reproducir" en el detalle del catálogo (con el episodio, en las series)~~ ✅ | RF-23, RF-26 | P3 + P4 |
 | 2 | ~~Integrar la gestión de planes del administrador, con pantalla~~ ✅ | RF-12.1 a RF-12.4 | P2 |
-| 3 | Documento de integración y matriz de fallos (la respuesta 503 ya está ✅) | RNF-06 | P5 |
+| 3 | ~~Documento de integración y matriz de fallos~~ ✅ | RNF-06, RNF-07 | P5 |
 | 4 | Mediciones de índices en MongoDB (antes y después) | RNF-17 | P3, P4 |
 | 5 | ~~Pantallas de viewing con el layout compartido~~ ✅ | RNF-20 | P4 |
 | 6 | Informes de analítica y sus CSV | RF-35 a RF-38, RF-39 | P5 |

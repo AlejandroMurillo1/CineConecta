@@ -401,3 +401,5 @@ Como `cineApp` solo puede leer `admin_users`, la aplicación no puede crear admi
 **Verificación V1** (antes de buscar, agregar a "Mi lista" o iniciar una reproducción):
 1. En PostgreSQL: el perfil está activo y pertenece a la cuenta autenticada, y la cuenta tiene una suscripción vigente (`SubscriptionApi.current`, que aplica `startsAt <= ahora < endsAt` sobre `subscriptions` con el reloj de la aplicación).
 2. En MongoDB: el contenido está publicado (`PUBLISHED`) y su `ageRating` es menor o igual al `maxAgeRating` del perfil.
+
+Qué pasa cuando una de las bases no está disponible o una operación se interrumpe: ver `docs/03_integracion_y_fallos.md`.
