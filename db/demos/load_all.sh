@@ -26,8 +26,21 @@ PERFILES_VOLUMEN="${PERFILES_VOLUMEN:-3400}"
 
 DEMOS="$(cd "$(dirname "$0")" && pwd)"
 PSQL=(docker compose exec -T postgres psql -U cine -d cineconecta -v ON_ERROR_STOP=1)
-MONGOSH=(docker compose exec -T mongo mongosh --quiet -u cineOwner -p cine_owner_dev
-         --authenticationDatabase cineconecta cineconecta)
+
+# Ejecuta un script en MongoDB con mongosh --file. No se le pasa por la entrada estándar:
+# ahí mongosh lo trata como texto escrito en la consola, línea por línea, y con scripts
+# grandes se vuelve muy lento (y llena la salida de "|").
+#   mongo_run <archivo> [VARIABLE=valor ...]
+mongo_run() {
+  local file=$1
+  shift
+  local envs=()
+  local kv
+  for kv in "$@"; do envs+=(-e "$kv"); done
+  docker compose exec -T mongo sh -c 'cat > /tmp/cineconecta_seed.js' < "$file"
+  docker compose exec -T ${envs[@]+"${envs[@]}"} mongo mongosh --quiet -u cineOwner -p cine_owner_dev \
+    --authenticationDatabase cineconecta cineconecta --file /tmp/cineconecta_seed.js
+}
 
 step() { printf '\n== %s\n' "$1"; }
 started=$SECONDS
@@ -51,21 +64,23 @@ step "PostgreSQL: suscripciones y pagos de las cuentas de volumen (08)"
 "${PSQL[@]}" -q < "$DEMOS/postgres/08_volume_subscriptions.sql"
 
 step "MongoDB: catálogo de demostración (01)"
-"${MONGOSH[@]}" < "$DEMOS/mongo/01_demo_catalog.js" | tail -1
+mongo_run "$DEMOS/mongo/01_demo_catalog.js" | tail -1
 step "MongoDB: catálogo de volumen, $CONTENIDOS contenidos (03)"
-docker compose exec -T -e CONTENIDOS="$CONTENIDOS" mongo mongosh --quiet -u cineOwner -p cine_owner_dev \
-  --authenticationDatabase cineconecta cineconecta < "$DEMOS/mongo/03_volume_catalog.js"
+mongo_run "$DEMOS/mongo/03_volume_catalog.js" CONTENIDOS="$CONTENIDOS"
 
 step "PostgreSQL → MongoDB: perfiles para sesiones y listas (07, muestra de $PERFILES_VOLUMEN perfiles de volumen)"
 viewers="$(mktemp)"
-trap 'rm -f "$viewers"' EXIT
+script="$(mktemp)"
+trap 'rm -f "$viewers" "$script"' EXIT
 "${PSQL[@]}" -qAt -v perfiles_volumen="$PERFILES_VOLUMEN" < "$DEMOS/postgres/07_export_viewers.sql" > "$viewers"
 echo "  exportados: $(wc -c < "$viewers" | tr -d ' ') bytes"
 
 step "MongoDB: sesiones de reproducción (02)"
-cat "$viewers" "$DEMOS/mongo/02_synthetic_sessions.js" | "${MONGOSH[@]}"
+cat "$viewers" "$DEMOS/mongo/02_synthetic_sessions.js" > "$script"
+mongo_run "$script"
 step "MongoDB: Mi lista (04)"
-cat "$viewers" "$DEMOS/mongo/04_synthetic_my_lists.js" | "${MONGOSH[@]}"
+cat "$viewers" "$DEMOS/mongo/04_synthetic_my_lists.js" > "$script"
+mongo_run "$script"
 
 step "Listo en $((SECONDS - started)) s"
 echo "  Clientes: contraseña Demo123* (ana.vigente@cineconecta.local, vol.000001@volumen.cineconecta.local, ...)"

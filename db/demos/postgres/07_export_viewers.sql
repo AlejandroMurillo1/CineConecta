@@ -23,8 +23,11 @@
     \set perfiles_volumen 3400
 \endif
 
+-- Una sola línea: json_agg separa los elementos con saltos de línea, y mongosh, al leer por
+-- la entrada estándar, vuelve a analizar todo lo acumulado con cada línea nueva (con miles de
+-- perfiles tarda muchísimo). jsonb no agrega saltos de línea.
 SELECT 'const VIEWERS = '
-       || COALESCE(json_agg(v ORDER BY v."profileId"), '[]'::json)::text
+       || COALESCE(jsonb_agg(to_jsonb(v) ORDER BY v."profileId"), '[]'::jsonb)::text
        || ';'
 FROM (
     SELECT p.accountid    AS "accountId",
