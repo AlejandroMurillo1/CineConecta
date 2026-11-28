@@ -1,5 +1,6 @@
 package com.cineconecta.platform.accounts.internal.security;
 
+import com.cineconecta.platform.accounts.CurrentProfile;
 import com.cineconecta.platform.accounts.ProfileView;
 import com.cineconecta.platform.accounts.internal.service.ProfileService;
 import com.cineconecta.platform.shared.CurrentAccountProvider;
@@ -20,7 +21,7 @@ import java.util.OptionalInt;
  * Así, desactivar un perfil surte efecto de inmediato aunque el token aún no haya expirado.</p>
  */
 @Component
-public class CurrentProfileResolver {
+public class CurrentProfileResolver implements CurrentProfile {
 
     private final CurrentAccountProvider currentAccount;
     private final ProfileService profiles;
@@ -30,6 +31,7 @@ public class CurrentProfileResolver {
         this.profiles = profiles;
     }
 
+    @Override
     public Optional<ProfileView> current() {
         OptionalInt accountId = currentAccount.currentAccountId();
         OptionalInt profileId = profileIdClaim();
@@ -37,6 +39,11 @@ public class CurrentProfileResolver {
             return Optional.empty();
         }
         return profiles.selectable(accountId.getAsInt(), profileId.getAsInt());
+    }
+
+    @Override
+    public ProfileView require() {
+        return current().orElseThrow(ProfileSelectionRequiredException::new);
     }
 
     /** {@code profileId} que trae el token, sin verificar (solo para saber si hay que reemitirlo). */

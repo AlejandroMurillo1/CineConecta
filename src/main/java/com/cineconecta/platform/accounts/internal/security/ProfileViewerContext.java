@@ -29,7 +29,7 @@ class ProfileViewerContext implements ViewerContext {
 
     @Override
     public int maxAgeRating() {
-        ProfileView profile = currentProfile.current().orElseThrow(ProfileSelectionRequiredException::new);
+        ProfileView profile = currentProfile.require();
         if (entitlements.maxProfilesFor(profile.accountId()) <= 0) {
             throw new SubscriptionRequiredException();
         }
