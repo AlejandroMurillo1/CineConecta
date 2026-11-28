@@ -50,7 +50,7 @@ class ConsumptionApiIT {
 
     private void insert(PlaybackSessionStore store, Instant started, int plan, ContentType type,
                         int profile, int seconds) {
-        String episodeId = type == ContentType.SERIES ? new ObjectId().toHexString() : null;
+        String episodeId = type == ContentType.SERIES ? java.util.UUID.randomUUID().toString() : null;
         store.insert(new PlaybackSession(new ObjectId().toHexString(), 7, profile, new ObjectId().toHexString(),
                 episodeId, type, plan, 180, started, null, started.plusSeconds(seconds),
                 seconds, seconds, false, 0, started.plusSeconds(seconds)));

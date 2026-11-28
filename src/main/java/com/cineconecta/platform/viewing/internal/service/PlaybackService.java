@@ -16,6 +16,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class PlaybackService {
@@ -37,7 +38,7 @@ public class PlaybackService {
     public PlaybackSession start(int profileId, String contentId, String episodeId) {
         var profile = access.requireEligibleProfile(profileId).profile();
         String id = validId(contentId);
-        String episode = episodeId == null || episodeId.isBlank() ? null : validId(episodeId);
+        String episode = episodeId == null || episodeId.isBlank() ? null : validEpisodeId(episodeId);
         return startAt(profile, requirePlayable(profile, id, episode), 0);
     }
 
@@ -146,8 +147,17 @@ public class PlaybackService {
 
     private String validId(String value) {
         if (value == null || !ObjectId.isValid(value.strip())) {
-            throw new IllegalArgumentException("Ingresa un ID de contenido o episodio válido.");
+            throw new IllegalArgumentException("Ingresa un ID de contenido válido.");
         }
         return new ObjectId(value.strip()).toHexString();
+    }
+
+    /** Los episodios se identifican con un UUID (lo genera el catálogo al crear el episodio). */
+    private String validEpisodeId(String value) {
+        try {
+            return UUID.fromString(value.strip()).toString();
+        } catch (IllegalArgumentException error) {
+            throw new IllegalArgumentException("Ingresa un ID de episodio válido.");
+        }
     }
 }

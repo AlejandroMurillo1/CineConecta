@@ -51,7 +51,8 @@ public class PlaybackSessionStore implements ConsumptionApi {
                 .append("lastActivityAt", toDate(session.lastActivityAt()));
 
         if (session.episodeId() != null) {
-            document.append("episodeId", new ObjectId(session.episodeId()));
+            // Los episodios se identifican con un UUID en texto (contents.contentDetails...episodeId).
+            document.append("episodeId", session.episodeId());
         }
         collection().insertOne(document);
     }
@@ -123,11 +124,11 @@ public class PlaybackSessionStore implements ConsumptionApi {
     }
 
     private PlaybackSession read(Document document) {
-        ObjectId episode = document.getObjectId("episodeId");
+        String episode = document.getString("episodeId");
         return new PlaybackSession(document.getObjectId("_id").toHexString(),
                 document.getInteger("accountId"), document.getInteger("profileId"),
                 document.getObjectId("contentId").toHexString(),
-                episode == null ? null : episode.toHexString(), readType(document.getString("contentType")),
+                episode, readType(document.getString("contentType")),
                 document.getInteger("planIdAtStart"), document.getInteger("durationSeconds"),
                 toInstant(document.getDate("startedAt")), toInstant(document.getDate("playingSince")),
                 toInstant(document.getDate("endedAt")), document.getInteger("watchedSeconds"),
@@ -149,21 +150,17 @@ public class PlaybackSessionStore implements ConsumptionApi {
         return mongo.getCollection("playback_sessions");
     }
 
+    /** Mismos valores que contents.type y que el validador de playback_sessions: MOVIE, SERIES, DOCUMENTARY. */
     private static String storedType(ContentType type) {
-        return switch (type) {
-            case MOVIE -> "PELICULA";
-            case DOCUMENTARY -> "DOCUMENTAL";
-            case SERIES -> "SERIE";
-        };
+        return type.name();
     }
 
     private static ContentType readType(String type) {
-        return switch (type) {
-            case "PELICULA" -> ContentType.MOVIE;
-            case "DOCUMENTAL" -> ContentType.DOCUMENTARY;
-            case "SERIE" -> ContentType.SERIES;
-            default -> throw new IllegalArgumentException("Tipo de contenido desconocido: " + type);
-        };
+        try {
+            return ContentType.valueOf(type);
+        } catch (IllegalArgumentException | NullPointerException error) {
+            throw new IllegalArgumentException("Tipo de contenido desconocido: " + type, error);
+        }
     }
 
     private static Date toDate(Instant instant) {
