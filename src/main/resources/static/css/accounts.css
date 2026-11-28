@@ -1,0 +1,90 @@
+/* Complementa app.css (variables y componentes cc-*) para las pantallas de accounts. */
+
+.ac-profiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.ac-profile {
+    gap: 1rem;
+    transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.ac-profile:hover {
+    border-color: var(--cc-muted);
+    transform: translateY(-2px);
+}
+
+.ac-profile h2 {
+    margin: 0.6rem 0 0.4rem;
+    font-size: 1.2rem;
+    word-break: break-word;
+}
+
+.ac-profile .cc-actions {
+    margin-top: 0;
+    align-items: center;
+}
+
+.ac-profile .cc-actions form {
+    margin: 0;
+}
+
+.ac-profile-current {
+    border-color: var(--cc-accent);
+}
+
+.ac-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--cc-accent), #7c3aed);
+    color: #fff;
+}
+
+.ac-section {
+    margin-bottom: 1.5rem;
+}
+
+.ac-section h2 {
+    margin-top: 0;
+}
+
+.ac-inline-form {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-end;
+}
+
+.ac-inline-form .cc-field {
+    flex: 1 1 200px;
+}
+
+.ac-inactive {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.ac-inactive li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--cc-border);
+}
+
+.ac-inactive li:last-child {
+    border-bottom: 0;
+}
+
+.ac-inactive form {
+    margin: 0;
+}

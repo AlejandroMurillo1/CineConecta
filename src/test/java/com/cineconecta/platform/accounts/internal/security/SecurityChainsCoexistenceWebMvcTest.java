@@ -29,7 +29,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * el mismo contexto: verifica que arrancan juntas y que cada ruta la atiende la cadena correcta.
  */
 @WebMvcTest(controllers = {AuthController.class, AdminController.class})
-@Import({SharedConfig.class, JwtSecurityConfig.class, AdminSecurityConfig.class, CustomerSecurityConfig.class})
+@Import({SharedConfig.class, JwtSecurityConfig.class, AdminSecurityConfig.class, CustomerSecurityConfig.class,
+        CustomerTokens.class})
 class SecurityChainsCoexistenceWebMvcTest {
 
     @Autowired

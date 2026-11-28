@@ -8,15 +8,9 @@
     <link rel="stylesheet" th:href="@{/css/billing.css}">
 </head>
 <body>
-<nav class="cc-navbar">
-    <a class="cc-brand" th:href="@{/billing/plans}">CineConecta</a>
-    <div class="cc-nav-links">
-        <a class="active" th:href="@{/billing/plans}">Planes</a>
-        <a th:href="@{/billing/history}">Historial y Pagos</a>
-    </div>
-</nav>
+<nav th:replace="~{shared/layout :: navbar('plans')}"></nav>
 
-<main class="cc-container">
+<main id="main" class="cc-container">
     <header class="cc-header">
         <h1>Planes de suscripción</h1>
         <p class="cc-muted">Todos los planes otorgan acceso completo por 30 días (720 horas) en intervalo [inicio, fin).</p>
@@ -32,12 +26,16 @@
         (máximo <span th:text="${currentSubscription.maxProfiles()}">1</span> perfiles activos).
         Vigencia: <span th:text="${fmt.format(currentSubscription.startsAt())}">inicio</span>
         hasta <span th:text="${fmt.format(currentSubscription.endsAt())}">fin</span> (hora Colombia).
+        <div class="cc-actions">
+            <a class="cc-btn cc-btn-primary" th:href="@{/profiles}">Ir a mis perfiles</a>
+        </div>
     </div>
 
     <div th:if="${authenticated}" class="cc-alert cc-alert-info">
         <strong>Perfiles activos en tu cuenta:</strong>
         <span th:text="${activeProfiles}">0</span>.
-        Si deseas cambiar a un plan con menor límite, primero desactiva los perfiles excedentes.
+        Si deseas cambiar a un plan con menor límite, primero
+        <a th:href="@{/profiles}">desactiva los perfiles excedentes</a>.
     </div>
 
     <section class="cc-grid">

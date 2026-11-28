@@ -45,7 +45,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = {AuthController.class, CustomerSecurityWebMvcTest.WhoAmIController.class})
 @Import({SharedConfig.class, JwtSecurityConfig.class, CustomerSecurityConfig.class,
-        JwtCurrentAccountProvider.class, CustomerSecurityWebMvcTest.WhoAmIController.class})
+        JwtCurrentAccountProvider.class, CustomerTokens.class, CustomerSecurityWebMvcTest.WhoAmIController.class})
 class CustomerSecurityWebMvcTest {
 
     private static final AccountSummary ANA = new AccountSummary(42, "Ana Pérez", "ana@correo.com");
@@ -112,7 +112,7 @@ class CustomerSecurityWebMvcTest {
         for (String next : new String[]{"//evil.example", "https://evil.example", "/\\evil.example"}) {
             mockMvc.perform(post("/login").with(csrf())
                             .param("email", "ana@correo.com").param("password", "x").param("next", next))
-                    .andExpect(redirectedUrl("/"));
+                    .andExpect(redirectedUrl("/profiles"));
         }
     }
 

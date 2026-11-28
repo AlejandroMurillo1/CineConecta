@@ -3,11 +3,7 @@ package com.cineconecta.platform.accounts.internal.web;
 import com.cineconecta.platform.accounts.internal.service.AccountService;
 import com.cineconecta.platform.accounts.internal.service.AccountSummary;
 import com.cineconecta.platform.accounts.internal.service.EmailAlreadyRegisteredException;
-import com.cineconecta.platform.shared.security.AuthCookies;
-import com.cineconecta.platform.shared.security.CineClaims;
-import com.cineconecta.platform.shared.security.IssuedToken;
-import com.cineconecta.platform.shared.security.JwtTokenService;
-import com.cineconecta.platform.shared.security.TokenType;
+import com.cineconecta.platform.accounts.internal.security.CustomerTokens;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
@@ -18,8 +14,6 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.util.Map;
-
 /**
  * Registro, inicio de sesión de clientes (RF-01, RF-02). El cierre de sesión (RF-03) lo atiende
  * el {@code LogoutFilter} de la cadena de clientes en {@code POST /logout}.
@@ -27,17 +21,17 @@ import java.util.Map;
 @Controller
 public class AuthController {
 
-    static final String DEFAULT_AFTER_LOGIN = "/";
+    /** Tras iniciar sesión se elige perfil (RF-09). */
+    static final String DEFAULT_AFTER_LOGIN = "/profiles";
+    /** Una cuenta nueva no tiene suscripción: sin ella no puede crear perfiles (RF-05). */
     static final String AFTER_REGISTER = "/billing/plans";
 
     private final AccountService accounts;
-    private final JwtTokenService tokens;
-    private final AuthCookies cookies;
+    private final CustomerTokens tokens;
 
-    public AuthController(AccountService accounts, JwtTokenService tokens, AuthCookies cookies) {
+    public AuthController(AccountService accounts, CustomerTokens tokens) {
         this.accounts = accounts;
         this.tokens = tokens;
-        this.cookies = cookies;
     }
 
     @GetMapping("/login")
@@ -100,9 +94,7 @@ public class AuthController {
     }
 
     private void signIn(AccountSummary account, HttpServletResponse response) {
-        IssuedToken token = tokens.issue(TokenType.CUSTOMER, String.valueOf(account.accountId()),
-                Map.of(CineClaims.ACCOUNT_ID, account.accountId()));
-        cookies.write(response, token);
+        tokens.signIn(response, account.accountId(), null);
     }
 
     /**

@@ -1,7 +1,5 @@
 package com.cineconecta.platform.accounts.internal.security;
 
-import com.cineconecta.platform.accounts.internal.persistence.AccountRepository;
-import com.cineconecta.platform.accounts.internal.service.AccountService;
 import com.cineconecta.platform.shared.security.AuthCookies;
 import com.cineconecta.platform.shared.security.CookieBearerTokenResolver;
 import com.cineconecta.platform.shared.security.JwtTokenService;
@@ -14,12 +12,10 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
-import java.time.Clock;
 import java.util.List;
 
 /**
@@ -75,14 +71,5 @@ public class CustomerSecurityConfig {
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .requestCache(AbstractHttpConfigurer::disable)
                 .build();
-    }
-
-    /**
-     * BCrypt local al módulo (no se publica un {@code PasswordEncoder} global para no interferir
-     * con la autenticación de administradores, que usa el suyo).
-     */
-    @Bean
-    public AccountService accountService(AccountRepository accounts, Clock clock) {
-        return new AccountService(accounts, new BCryptPasswordEncoder(), clock);
     }
 }

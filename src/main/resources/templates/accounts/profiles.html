@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{shared/layout :: head('Perfiles', ~{::link})}">
+    <link rel="stylesheet" th:href="@{/css/accounts.css}">
+</head>
+<body>
+<nav th:replace="~{shared/layout :: navbar('profiles')}"></nav>
+
+<main id="main" class="cc-container">
+    <header class="cc-header cc-fade-in">
+        <h1>¿Quién está viendo?</h1>
+        <p class="cc-muted" th:if="${overview.hasSubscription()}">
+            Perfiles activos: <strong th:text="${overview.activeCount()}">0</strong>
+            de <strong th:text="${overview.maxProfiles()}">0</strong> que permite tu plan.
+        </p>
+    </header>
+
+    <div th:replace="~{shared/layout :: flash}"></div>
+
+    <div class="cc-alert cc-alert-info" th:unless="${overview.hasSubscription()}">
+        No tienes una suscripción vigente: no puedes crear ni reactivar perfiles, ni ver el catálogo.
+        <a th:href="@{/billing/plans}">Elige un plan</a>.
+    </div>
+
+    <!--/* Perfiles activos: elegir, editar, desactivar */-->
+    <section class="ac-profiles" th:unless="${#lists.isEmpty(overview.active())}">
+        <article class="cc-card ac-profile" th:each="p : ${overview.active()}"
+                 th:classappend="${currentProfile != null and currentProfile.profileId() == p.profileId()} ? 'ac-profile-current'">
+            <div>
+                <div class="ac-avatar" aria-hidden="true" th:text="${#strings.substring(p.name(), 0, 1).toUpperCase()}">A</div>
+                <h2 th:text="${p.name()}">Nombre</h2>
+                <span class="cc-badge cc-badge-muted"
+                      th:text="${p.maxAgeRating() == 0 ? 'Todo público' : (p.maxAgeRating() >= 18 ? 'Adultos (18+)' : 'Hasta ' + p.maxAgeRating() + ' años')}">Todo público</span>
+                <span class="cc-badge cc-badge-success"
+                      th:if="${currentProfile != null and currentProfile.profileId() == p.profileId()}">En uso</span>
+            </div>
+            <div class="cc-actions">
+                <form th:action="@{/profiles/{id}/select(id=${p.profileId()})}" method="post">
+                    <input type="hidden" name="next" th:value="${next}" th:if="${!#strings.isEmpty(next)}">
+                    <button type="submit" class="cc-btn cc-btn-primary">Ver como <span th:text="${p.name()}">Nombre</span></button>
+                </form>
+                <a class="cc-btn cc-btn-secondary" th:href="@{/profiles/{id}/edit(id=${p.profileId()})}">Editar</a>
+                <form th:action="@{/profiles/{id}/deactivate(id=${p.profileId()})}" method="post">
+                    <button type="submit" class="cc-btn cc-btn-link">Desactivar</button>
+                </form>
+            </div>
+        </article>
+    </section>
+
+    <p class="cc-muted" th:if="${#lists.isEmpty(overview.active())}">Aún no tienes perfiles activos.</p>
+
+    <!--/* Crear perfil */-->
+    <section class="cc-card ac-section">
+        <h2>Nuevo perfil</h2>
+        <form th:if="${overview.canAddActive()}" class="cc-form ac-inline-form"
+              th:action="@{/profiles}" th:object="${form}" method="post" novalidate>
+            <div class="cc-field" th:classappend="${#fields.hasErrors('name')} ? 'cc-field-error'">
+                <label for="name">Nombre</label>
+                <input class="cc-input" id="name" type="text" th:field="*{name}" maxlength="50" required>
+                <span class="cc-error-text" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></span>
+            </div>
+            <div class="cc-field" th:classappend="${#fields.hasErrors('maxAgeRating')} ? 'cc-field-error'">
+                <label for="maxAgeRating">Clasificación máxima</label>
+                <select class="cc-select" id="maxAgeRating" th:field="*{maxAgeRating}">
+                    <option th:each="r : ${ratingOptions}" th:value="${r}"
+                            th:text="${r == 0 ? 'Todo público' : (r >= 18 ? 'Adultos (18+)' : 'Hasta ' + r + ' años')}">0</option>
+                </select>
+                <span class="cc-error-text" th:if="${#fields.hasErrors('maxAgeRating')}" th:errors="*{maxAgeRating}"></span>
+            </div>
+            <button type="submit" class="cc-btn cc-btn-primary">Crear perfil</button>
+        </form>
+        <p class="cc-muted" th:if="${overview.hasSubscription() and !overview.canAddActive()}">
+            Llegaste al máximo de perfiles activos de tu plan. Desactiva uno o cambia de plan.
+        </p>
+        <p class="cc-muted" th:unless="${overview.hasSubscription()}">Necesitas una suscripción vigente.</p>
+    </section>
+
+    <!--/* Perfiles desactivados: se conservan con su historial */-->
+    <section class="cc-card ac-section" th:unless="${#lists.isEmpty(overview.inactive())}">
+        <h2>Perfiles desactivados</h2>
+        <p class="cc-hint">Conservan su historial. Reactivarlos cuenta dentro del máximo de tu plan.</p>
+        <ul class="ac-inactive">
+            <li th:each="p : ${overview.inactive()}">
+                <span th:text="${p.name()}">Nombre</span>
+                <form th:action="@{/profiles/{id}/reactivate(id=${p.profileId()})}" method="post">
+                    <button type="submit" class="cc-btn cc-btn-secondary"
+                            th:disabled="${!overview.canAddActive()}">Reactivar</button>
+                </form>
+            </li>
+        </ul>
+    </section>
+</main>
+
+<footer th:replace="~{shared/layout :: footer}"></footer>
+</body>
+</html>
