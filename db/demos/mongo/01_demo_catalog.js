@@ -80,8 +80,18 @@ const docs = [
     movie(80, 'Sin asignar', [{ name: 'Por definir' }])),
 ];
 
-for (const doc of docs) {
-  cine.contents.replaceOne({ _id: doc._id }, doc, { upsert: true });
-  print(`  ${doc._id.toString()}  ${doc.type.padEnd(11)} ${doc.status.padEnd(9)} ${doc.title}`);
+// Leído por stdin, mongosh sigue con la siguiente sentencia aunque una falle: sin el
+// try/quit(1) imprimiría "cargado" aunque el validador hubiera rechazado los documentos.
+try {
+  for (const doc of docs) {
+    cine.contents.replaceOne({ _id: doc._id }, doc, { upsert: true });
+    print(`  ${doc._id.toString()}  ${doc.type.padEnd(11)} ${doc.status.padEnd(9)} ${doc.title}`);
+  }
+} catch (error) {
+  print(`ERROR: no se pudo cargar el catálogo de demostración: ${error.message}`);
+  if (error.errInfo) {
+    printjson(error.errInfo);
+  }
+  quit(1);
 }
 print(`Catálogo de demostración cargado en ${DB_NAME}: ${docs.length} contenidos.`);

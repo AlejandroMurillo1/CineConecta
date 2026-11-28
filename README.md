@@ -59,6 +59,14 @@ docker compose exec -T postgres psql -U cine -d cineconecta -v ON_ERROR_STOP=1 <
 docker compose exec -T mongo mongosh -u cineOwner -p cine_owner_dev --authenticationDatabase cineconecta cineconecta < db/demos/mongo/01_demo_catalog.js
 ```
 
+Sesiones de reproducción históricas bajo distintos planes (para el informe de consumo, "Continuar viendo" y las marcas de visto). Van después de los dos anteriores, porque toman los perfiles y suscripciones de PostgreSQL y el catálogo publicado de MongoDB:
+
+```bash
+{ docker compose exec -T postgres psql -U cine -d cineconecta -qAt -v ON_ERROR_STOP=1 < db/demos/postgres/07_export_viewers.sql
+  cat db/demos/mongo/02_synthetic_sessions.js
+} | docker compose exec -T mongo mongosh --quiet -u cineOwner -p cine_owner_dev --authenticationDatabase cineconecta cineconecta
+```
+
 **3. Aplicación**
 
 Si cambió los puertos, cree `config/application.properties` (está en `.gitignore`) con las conexiones de su máquina:
