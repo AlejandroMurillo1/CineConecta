@@ -1,4 +1,58 @@
-<!doctype html><html lang="es" xmlns:th="http://www.thymeleaf.org"><head th:replace="~{catalog/fragments/layout :: head(${episodeId == null ? 'Agregar episodio' : 'Editar episodio'})}" /><body><header th:replace="~{catalog/fragments/layout :: nav('admin')}" /><main class="container admin-page form-page">
-<a class="back-link" th:href="@{/admin/contents/{id}(id=${series.id})}">← Volver a la serie</a><p class="eyebrow" th:text="${'TEMPORADA ' + seasonNumber}"></p><h1 th:text="${episodeId == null ? 'Nuevo episodio' : 'Editar episodio'}"></h1><p class="form-hint" th:text="${series.metadata.title}"></p><div th:replace="~{catalog/fragments/layout :: notice(${error}, null)}"></div>
-<form class="edit-form" th:action="${action}" th:object="${episode}" method="post"><input type="hidden" name="version" th:value="${version}"/><div th:if="${#fields.hasGlobalErrors()}" class="notice notice-error"><p th:each="e : ${#fields.globalErrors()}" th:text="${e}"></p></div><section class="form-section"><div class="form-grid"><label class="field">Número<input type="number" th:field="*{number}" min="1" required/></label><label class="field">Título<input th:field="*{title}" required/></label><label class="field">Duración (segundos)<input type="number" th:field="*{durationSeconds}" min="1" required/></label><label class="field span-2">Sinopsis<textarea th:field="*{synopsis}" rows="4" required></textarea></label></div></section><div class="action-row"><button class="button button-primary">Guardar episodio</button><a class="button button-quiet" th:href="@{/admin/contents/{id}(id=${series.id})}">Cancelar</a></div></form>
-</main><footer th:replace="~{catalog/fragments/layout :: footer}" /></body></html>
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{shared/layout :: head(${episodeId == null ? 'Agregar episodio' : 'Editar episodio'}, ~{::link})}">
+    <link rel="stylesheet" th:href="@{/css/backoffice.css}">
+    <link rel="stylesheet" th:href="@{/css/catalog.css}">
+</head>
+<body>
+<nav th:replace="~{backoffice/fragments/admin-nav :: nav('catalog')}"></nav>
+
+<main id="main" class="cc-container">
+    <a class="cat-back-link" th:href="@{/admin/contents/{id}(id=${series.id})}">← Volver a la serie</a>
+
+    <header class="cc-header cc-fade-in">
+        <p class="cat-eyebrow" th:text="${'Temporada ' + seasonNumber}"></p>
+        <h1 th:text="${episodeId == null ? 'Nuevo episodio' : 'Editar episodio'}"></h1>
+        <p class="cc-muted" th:text="${series.metadata.title}"></p>
+    </header>
+
+    <div th:replace="~{shared/layout :: flash}"></div>
+
+    <form class="cc-form" th:action="${action}" th:object="${episode}" method="post">
+        <input type="hidden" name="version" th:value="${version}">
+
+        <div th:if="${#fields.hasGlobalErrors()}" class="cc-alert cc-alert-danger" role="alert">
+            <p th:each="e : ${#fields.globalErrors()}" th:text="${e}" style="margin: 0;"></p>
+        </div>
+
+        <section class="cc-card cat-section">
+            <div class="cat-form-grid">
+                <div class="cc-field">
+                    <label for="ep-number">Número</label>
+                    <input id="ep-number" class="cc-input" type="number" th:field="*{number}" min="1" required>
+                </div>
+                <div class="cc-field">
+                    <label for="ep-title">Título</label>
+                    <input id="ep-title" class="cc-input" th:field="*{title}" required>
+                </div>
+                <div class="cc-field">
+                    <label for="ep-duration">Duración (segundos)</label>
+                    <input id="ep-duration" class="cc-input" type="number" th:field="*{durationSeconds}" min="1" required>
+                </div>
+                <div class="cc-field cat-span-2">
+                    <label for="ep-synopsis">Sinopsis</label>
+                    <textarea id="ep-synopsis" class="cat-textarea" th:field="*{synopsis}" rows="4" required></textarea>
+                </div>
+            </div>
+        </section>
+
+        <div class="cc-actions">
+            <button class="cc-btn cc-btn-primary" type="submit">Guardar episodio</button>
+            <a class="cc-btn cc-btn-secondary" th:href="@{/admin/contents/{id}(id=${series.id})}">Cancelar</a>
+        </div>
+    </form>
+</main>
+
+<footer th:replace="~{shared/layout :: footer}"></footer>
+</body>
+</html>

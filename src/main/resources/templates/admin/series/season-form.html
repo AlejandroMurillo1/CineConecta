@@ -1,4 +1,73 @@
-<!doctype html><html lang="es" xmlns:th="http://www.thymeleaf.org"><head th:replace="~{catalog/fragments/layout :: head('Agregar temporada')}" /><body><header th:replace="~{catalog/fragments/layout :: nav('admin')}" /><main class="container admin-page form-page">
-<a class="back-link" th:href="@{/admin/contents/{id}(id=${series.id})}">← Volver a la serie</a><p class="eyebrow">GESTIÓN DE SERIE</p><h1>Nueva temporada</h1><p class="form-hint" th:text="${series.metadata.title}"></p><div th:replace="~{catalog/fragments/layout :: notice(${error}, null)}"></div>
-<form class="edit-form" th:action="${action}" th:object="${season}" method="post"><input type="hidden" name="version" th:value="${version}"/><div th:if="${#fields.hasGlobalErrors()}" class="notice notice-error"><p th:each="e : ${#fields.globalErrors()}" th:text="${e}"></p></div><section class="form-section"><h2>Temporada</h2><div class="form-grid"><label class="field">Número<input type="number" th:field="*{number}" min="1" required/></label><label class="field span-2">Descripción<input th:field="*{description}" required/></label></div></section><section class="form-section"><h2>Primer episodio</h2><div class="form-grid"><label class="field">Número<input name="episodes[0].number" type="number" min="1" required/></label><label class="field">Título<input name="episodes[0].title" required/></label><label class="field">Duración (segundos)<input name="episodes[0].durationSeconds" type="number" min="1" required/></label><label class="field span-2">Sinopsis<textarea name="episodes[0].synopsis" rows="3" required></textarea></label></div></section><div class="action-row"><button class="button button-primary">Agregar temporada</button><a class="button button-quiet" th:href="@{/admin/contents/{id}(id=${series.id})}">Cancelar</a></div></form>
-</main><footer th:replace="~{catalog/fragments/layout :: footer}" /></body></html>
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{shared/layout :: head('Agregar temporada', ~{::link})}">
+    <link rel="stylesheet" th:href="@{/css/backoffice.css}">
+    <link rel="stylesheet" th:href="@{/css/catalog.css}">
+</head>
+<body>
+<nav th:replace="~{backoffice/fragments/admin-nav :: nav('catalog')}"></nav>
+
+<main id="main" class="cc-container">
+    <a class="cat-back-link" th:href="@{/admin/contents/{id}(id=${series.id})}">← Volver a la serie</a>
+
+    <header class="cc-header cc-fade-in">
+        <p class="cat-eyebrow">Gestión de serie</p>
+        <h1>Nueva temporada</h1>
+        <p class="cc-muted" th:text="${series.metadata.title}"></p>
+    </header>
+
+    <div th:replace="~{shared/layout :: flash}"></div>
+
+    <form class="cc-form" th:action="${action}" th:object="${season}" method="post">
+        <input type="hidden" name="version" th:value="${version}">
+
+        <div th:if="${#fields.hasGlobalErrors()}" class="cc-alert cc-alert-danger" role="alert">
+            <p th:each="e : ${#fields.globalErrors()}" th:text="${e}" style="margin: 0;"></p>
+        </div>
+
+        <section class="cc-card cat-section">
+            <h2>Temporada</h2>
+            <div class="cat-form-grid">
+                <div class="cc-field">
+                    <label for="season-number">Número</label>
+                    <input id="season-number" class="cc-input" type="number" th:field="*{number}" min="1" required>
+                </div>
+                <div class="cc-field cat-span-2">
+                    <label for="season-desc">Descripción</label>
+                    <input id="season-desc" class="cc-input" th:field="*{description}" required>
+                </div>
+            </div>
+        </section>
+
+        <section class="cc-card cat-section">
+            <h2>Primer episodio</h2>
+            <div class="cat-form-grid">
+                <div class="cc-field">
+                    <label for="ep-number">Número</label>
+                    <input id="ep-number" class="cc-input" name="episodes[0].number" type="number" min="1" required>
+                </div>
+                <div class="cc-field">
+                    <label for="ep-title">Título</label>
+                    <input id="ep-title" class="cc-input" name="episodes[0].title" required>
+                </div>
+                <div class="cc-field">
+                    <label for="ep-duration">Duración (segundos)</label>
+                    <input id="ep-duration" class="cc-input" name="episodes[0].durationSeconds" type="number" min="1" required>
+                </div>
+                <div class="cc-field cat-span-2">
+                    <label for="ep-synopsis">Sinopsis</label>
+                    <textarea id="ep-synopsis" class="cat-textarea" name="episodes[0].synopsis" rows="3" required></textarea>
+                </div>
+            </div>
+        </section>
+
+        <div class="cc-actions">
+            <button class="cc-btn cc-btn-primary" type="submit">Agregar temporada</button>
+            <a class="cc-btn cc-btn-secondary" th:href="@{/admin/contents/{id}(id=${series.id})}">Cancelar</a>
+        </div>
+    </form>
+</main>
+
+<footer th:replace="~{shared/layout :: footer}"></footer>
+</body>
+</html>

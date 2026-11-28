@@ -10,6 +10,7 @@
     <a class="cc-brand" th:href="@{/admin}">CineConecta · Administración</a>
     <div class="cc-nav-links">
         <a th:classappend="${active == 'home'} ? 'active'" th:href="@{/admin}">Inicio</a>
+        <a th:classappend="${active == 'catalog'} ? 'active'" th:href="@{/admin/contents}">Catálogo</a>
         <a th:classappend="${active == 'reports'} ? 'active'" th:href="@{/admin/reports/revenue}">Ingresos por plan</a>
         <th:block sec:authorize="hasRole('ADMIN')">
             <span class="bo-user" sec:authentication="principal.displayName">Administrador</span>

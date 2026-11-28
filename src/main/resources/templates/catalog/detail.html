@@ -1,14 +1,66 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{catalog/fragments/layout :: head(${content.metadata.title})}" />
-<body><header th:replace="~{catalog/fragments/layout :: nav('catálogo')}" />
-<main class="container detail-page"><a class="back-link" th:href="@{/catalog}">← Volver al catálogo</a>
-  <article class="detail-hero"><img class="detail-poster" th:src="${content.metadata.posterUrl}" th:alt="${'Afiche de ' + content.metadata.title}" />
-    <div><p class="eyebrow" th:text="${content.type + ' · ' + content.metadata.year}">TIPO · AÑO</p><h1 th:text="${content.metadata.title}">Título</h1><p class="rating" th:text="${'Clasificación ' + content.metadata.ageRating + '+'}"></p><p class="synopsis" th:text="${content.metadata.synopsis}"></p>
-      <div class="tag-list"><span th:each="genre : ${content.metadata.genres}" th:text="${genre}"></span></div>
-      <dl class="metadata"><dt>Países</dt><dd th:text="${#strings.listJoin(content.metadata.countries, ', ')}"></dd><dt>Audio</dt><dd th:text="${#strings.listJoin(content.metadata.audioLanguages, ', ')}"></dd><dt>Subtítulos</dt><dd th:text="${#strings.listJoin(content.metadata.subtitleLanguages, ', ')}"></dd></dl></div>
-  </article>
-  <section class="episode-section" th:if="${content.details instanceof T(com.cineconecta.platform.catalog.models.SeriesDetails)}"><h2>Temporadas y episodios</h2><div th:each="season : ${content.details.seasons}" class="season-block"><h3 th:text="${'Temporada ' + season.number}"></h3><p th:text="${season.description}"></p><ol><li th:each="episode : ${season.episodes}"><strong th:text="${episode.number + '. ' + episode.title}"></strong><span th:text="${episode.synopsis}"></span><small th:text="${episode.durationSeconds / 60 + ' min'}"></small></li></ol></div></section>
-  <section class="episode-section" th:if="${content.details instanceof T(com.cineconecta.platform.catalog.models.MovieDetails)}"><h2>Ficha técnica</h2><p th:text="${'Dirección: ' + #strings.listJoin(content.details.directors, ', ')}"></p><p th:text="${content.details.durationSeconds / 60 + ' minutos'}"></p></section>
-  <section class="episode-section" th:if="${content.details instanceof T(com.cineconecta.platform.catalog.models.DocumentaryDetails)}"><h2>Sobre el documental</h2><p th:text="${'Dirección: ' + #strings.listJoin(content.details.directors, ', ')}"></p><p th:text="${'Temas: ' + #strings.listJoin(content.details.topics, ', ')}"></p><p th:text="${content.details.durationSeconds / 60 + ' minutos'}"></p></section>
-</main><footer th:replace="~{catalog/fragments/layout :: footer}" /></body></html>
+<head th:replace="~{shared/layout :: head(${content.metadata.title}, ~{::link})}">
+    <link rel="stylesheet" th:href="@{/css/catalog.css}">
+</head>
+<body>
+<nav th:replace="~{shared/layout :: navbar('catalog')}"></nav>
+
+<main id="main" class="cc-container">
+    <a class="cat-back-link" th:href="@{/catalog}">← Volver al catálogo</a>
+
+    <article class="cc-card cat-detail-hero cc-fade-in">
+        <img class="cat-detail-poster" th:src="${content.metadata.posterUrl}" th:alt="${'Afiche de ' + content.metadata.title}">
+        <div class="cat-detail-copy">
+            <p class="cat-eyebrow" th:text="${content.type + ' · ' + content.metadata.year}">TIPO · AÑO</p>
+            <h1 th:text="${content.metadata.title}">Título</h1>
+            <p class="cc-muted" th:text="${'Clasificación ' + content.metadata.ageRating + '+'}"></p>
+            <p class="cat-synopsis" th:text="${content.metadata.synopsis}"></p>
+            <div class="cat-tag-list">
+                <span class="cat-tag" th:each="genre : ${content.metadata.genres}" th:text="${genre}"></span>
+            </div>
+            <dl class="cat-metadata">
+                <dt>Países</dt>
+                <dd th:text="${#strings.listJoin(content.metadata.countries, ', ')}"></dd>
+                <dt>Audio</dt>
+                <dd th:text="${#strings.listJoin(content.metadata.audioLanguages, ', ')}"></dd>
+                <dt>Subtítulos</dt>
+                <dd th:text="${#strings.listJoin(content.metadata.subtitleLanguages, ', ')}"></dd>
+            </dl>
+        </div>
+    </article>
+
+    <section class="cc-card cat-section" th:if="${content.details instanceof T(com.cineconecta.platform.catalog.models.SeriesDetails)}">
+        <h2>Temporadas y episodios</h2>
+        <div th:each="season : ${content.details.seasons}" class="cat-season-block">
+            <h3 th:text="${'Temporada ' + season.number}"></h3>
+            <p class="cc-muted" th:text="${season.description}"></p>
+            <ol class="cat-episode-list">
+                <li th:each="episode : ${season.episodes}">
+                    <div>
+                        <strong th:text="${episode.number + '. ' + episode.title}"></strong>
+                        <span class="cc-muted" th:text="${' — ' + episode.synopsis}"></span>
+                    </div>
+                    <small class="cc-muted" th:text="${episode.durationSeconds / 60 + ' min'}"></small>
+                </li>
+            </ol>
+        </div>
+    </section>
+
+    <section class="cc-card cat-section" th:if="${content.details instanceof T(com.cineconecta.platform.catalog.models.MovieDetails)}">
+        <h2>Ficha técnica</h2>
+        <p th:text="${'Dirección: ' + #strings.listJoin(content.details.directors, ', ')}"></p>
+        <p class="cc-muted" th:text="${content.details.durationSeconds / 60 + ' minutos'}"></p>
+    </section>
+
+    <section class="cc-card cat-section" th:if="${content.details instanceof T(com.cineconecta.platform.catalog.models.DocumentaryDetails)}">
+        <h2>Sobre el documental</h2>
+        <p th:text="${'Dirección: ' + #strings.listJoin(content.details.directors, ', ')}"></p>
+        <p th:text="${'Temas: ' + #strings.listJoin(content.details.topics, ', ')}"></p>
+        <p class="cc-muted" th:text="${content.details.durationSeconds / 60 + ' minutos'}"></p>
+    </section>
+</main>
+
+<footer th:replace="~{shared/layout :: footer}"></footer>
+</body>
+</html>
