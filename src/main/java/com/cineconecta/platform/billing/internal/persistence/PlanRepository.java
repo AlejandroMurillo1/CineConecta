@@ -10,4 +10,10 @@ public interface PlanRepository extends JpaRepository<PlanEntity, Integer> {
     List<PlanEntity> findByIsActiveOrderByPriceAsc(String isActive);
 
     List<PlanEntity> findByPlanIdIn(Collection<Integer> planIds);
+
+    List<PlanEntity> findAllByOrderByPriceAsc();
+
+    boolean existsByNameIgnoreCase(String name);
+
+    boolean existsByNameIgnoreCaseAndPlanIdNot(String name, Integer planId);
 }
