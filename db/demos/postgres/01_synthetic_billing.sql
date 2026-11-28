@@ -15,8 +15,9 @@ SET search_path = cineconecta, public;
 BEGIN;
 
 -- 1. Cuentas de prueba (si no existen por correo)
+--    Contraseña de todas las cuentas de demostración: Demo123*  (hash BCrypt de abajo)
 INSERT INTO accounts (fullname, email, passwordhash)
-SELECT v.fullname, v.email, '$2a$10$7EqJtq98hPqEX7fNZaFWoO5r5Q6fT7wI6Q2u5q7L2bM2Q8S6l9x2K'
+SELECT v.fullname, v.email, '$2a$10$O5AtctlJPnwGiViRRj3uE.lNMBxWEYNFFEMGkrVxfGxNMXRvhnFVi'
 FROM (VALUES
     ('Ana María Gómez',    'ana.vigente@cineconecta.local'),
     ('Carlos Pérez',       'carlos.vencida@cineconecta.local'),
@@ -26,6 +27,13 @@ FROM (VALUES
 WHERE NOT EXISTS (
     SELECT 1 FROM accounts a WHERE LOWER(a.email) = LOWER(v.email)
 );
+
+-- Si las cuentas ya existían con el hash anterior (sin contraseña conocida), se actualiza.
+UPDATE accounts
+SET passwordhash = '$2a$10$O5AtctlJPnwGiViRRj3uE.lNMBxWEYNFFEMGkrVxfGxNMXRvhnFVi'
+WHERE LOWER(email) IN ('ana.vigente@cineconecta.local', 'carlos.vencida@cineconecta.local',
+                       'lucia.downgrade@cineconecta.local', 'mateo.sinplan@cineconecta.local')
+  AND passwordhash <> '$2a$10$O5AtctlJPnwGiViRRj3uE.lNMBxWEYNFFEMGkrVxfGxNMXRvhnFVi';
 
 -- 2. Perfiles de prueba
 -- Ana: 2 perfiles activos (plan Estándar vigente)
