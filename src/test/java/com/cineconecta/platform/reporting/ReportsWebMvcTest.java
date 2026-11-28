@@ -32,7 +32,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 @WebMvcTest(ReportsController.class)
-@Import(com.cineconecta.platform.shared.config.SharedConfig.class)
+@Import({com.cineconecta.platform.shared.config.SharedConfig.class,
+        com.cineconecta.platform.shared.PermitAllSecurityTestConfig.class})
 class ReportsWebMvcTest {
 
     private static final ReportPeriod NOVEMBER =

@@ -10,7 +10,7 @@
      Sin hojas propias:  <head th:replace="~{shared/layout :: head('Planes', ~{})}"></head>
 
   2) Navegación de clientes:   <nav th:replace="~{shared/layout :: navbar('plans')}"></nav>
-     Valores de "active": home, profiles, my-list, plans, history.
+     Valores de "active": home, catalog, profiles, my-list, plans, history.
      Usa el atributo de modelo opcional "currentProfile" (profileId, name) para "Mi lista" y el chip.
 
   3) Mensajes flash (RedirectAttributes "success", "error", "info"):
@@ -37,7 +37,7 @@
 
     <div class="cc-nav-links">
         <th:block sec:authorize="isAuthenticated()">
-            <!-- Catálogo: agregar aquí el enlace cuando el módulo catalog publique su pantalla de búsqueda. -->
+            <a th:classappend="${active == 'catalog'} ? 'active'" th:href="@{/catalog}">Catálogo</a>
             <a th:if="${currentProfile != null}"
                th:classappend="${active == 'my-list'} ? 'active'"
                th:href="@{/viewing/profiles/{id}/my-list(id=${currentProfile.profileId()})}">Mi lista</a>
