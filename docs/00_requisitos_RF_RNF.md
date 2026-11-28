@@ -77,7 +77,7 @@
 | RF-25 | Ver Mi lista | Perfil | `GET /viewing/my-list` | 06, 08 | P4 | ✅ | Marca los contenidos retirados. |
 | RF-26 | Iniciar reproducción | Perfil | `POST /viewing/player` | 02, 04, 06, 07, 09, 10 | P4 | 🟡 | Verifica cuenta, perfil activo, suscripción, contenido publicado y clasificación (ambas bases). **Falta el botón "Reproducir" en el detalle del catálogo**; hoy se escribe el id del contenido o del episodio. |
 | RF-27 | Pausar, reanudar y avanzar (no priorizar) | Perfil | `POST /viewing/player/{sesión}` | 09, 10 | P4 | ✅ | Acciones `PAUSE`, `RESUME`, `SEEK` y `CHECKPOINT`. El tiempo visto excluye los saltos. |
-| RF-28 | Finalizar reproducción | Perfil | `POST /viewing/player/{sesión}` (`FINISH`) | 09, 10 | P4 | ✅ | Completada al finalizar o al alcanzar el 90 %. |
+| RF-28 | Finalizar reproducción | Sistema | `POST /viewing/player/{sesión}` (`FINISH`) | 09, 10 | P4 | ✅ | Automática: el reproductor la finaliza al llegar al final del contenido y lleva al detalle (no hay botón de finalizar). Completada si se finalizó o si alcanzó el 90 %; lo completado sale de "Continuar viendo" y se marca como visto en el catálogo. |
 | RF-29 | Ver "Continuar viendo" | Perfil | `GET /viewing/continue-watching` | 06, 10 | P4 | ✅ | Ordenado por actividad reciente; excluye los retirados. |
 | RF-30 | Cerrar sesiones abandonadas (proceso del sistema) | Sistema | Tarea programada cada 30 s | 09 | P4 | ✅ | `AbandonedPlaybackCleanup`. |
 
@@ -88,7 +88,7 @@
 | RF-31 | Iniciar sesión (admin) | Admin | `GET/POST /admin/login` | 11 | P5 | ✅ | Usuarios en MongoDB (`admin_users`) con BCrypt. |
 | RF-32 | Cerrar sesión (admin) | Admin | `POST /admin/logout` | — | P5 | ✅ | |
 | RF-33 | Ingresos por plan | Admin | `GET /admin/reports/revenue` | 12 | P5 | ✅ | Filtro de fechas. Lee PostgreSQL con `cine_report`. |
-| RF-34 | Consumo por plan y tipo | Admin | `GET /admin/reports/consumption` | 13 | P5 | ✅ | Combina MongoDB (sesiones) y PostgreSQL (planes); plan vigente al iniciar cada sesión. |
+| RF-34 | Consumo por plan y tipo | Admin | `GET /admin/reports/consumption` | 13 | P5 | ✅ | Combina MongoDB (sesiones, leídas con `cineReport`) y PostgreSQL (planes); plan vigente al iniciar cada sesión. |
 | RF-35 | Rendimiento del catálogo por género, tipo y período | Admin | — | 14 | P5 | ⏳ | |
 | RF-36 | Finalización y abandono de contenidos | Admin | — | 15 | P5 | ⏳ | |
 | RF-37 | Contenidos de bajo desempeño | Admin | — | 16 | P5 | ⏳ | |
@@ -154,7 +154,7 @@ Los identificadores que cruzan bases (`accountId`, `profileId`, `planIdAtStart`,
 | RNF-11 | **Sesión de cliente segura.** | JWT HS256 en una cookie `HttpOnly` y `SameSite=Lax` (`Secure` con HTTPS), con vencimiento de 60 minutos. CSRF activo en formularios y en htmx. Sin sesión HTTP en el servidor. | `JwtTokenServiceTest`, `AuthCookiesTest`, `CustomerSecurityWebMvcTest` | ✅ |
 | RNF-12 | **Cada usuario solo accede a los perfiles y la actividad de su propia cuenta.** | La cuenta sale siempre del token, nunca de un parámetro. El perfil en uso se verifica en PostgreSQL en cada petición (activo y de la cuenta). Un perfil ajeno responde 404. | `ProfileWebMvcTest`, `ProfileRulesIT`, `ViewingCurrentProfileWebMvcTest` | ✅ |
 | RNF-13 | **Autorización de administrador verificada en el servidor** para cada operación administrativa; administradores independientes de los clientes. | Cadena de seguridad propia en `/admin/**` (rol `ADMIN`), separada de la de clientes. Un token de cliente no abre el panel, y uno de administrador no sirve como cliente. | `AdminSecurityWebMvcTest`, `SecurityChainsCoexistenceWebMvcTest` | ✅ |
-| RNF-14 | **Mínimo privilegio en las bases.** | PostgreSQL: `cine_owner` (DDL), `cine_app` (sin `DELETE`, `UPDATE` por columna), `cine_report` (solo lectura, usado por el informe de ingresos). MongoDB: rol `cineAppRole` por colección; `admin_users` de solo lectura para la aplicación. | `02_grants.sql`, `03_users.js`, `ReportingConnectionIT` | ✅ |
+| RNF-14 | **Mínimo privilegio en las bases.** | PostgreSQL: `cine_owner` (DDL), `cine_app` (sin `DELETE`, `UPDATE` por columna), `cine_report` (solo lectura, usado por el informe de ingresos). MongoDB: rol `cineAppRole` por colección, sin permiso de borrar; `admin_users` de solo lectura para la aplicación; `cineReport` (rol `read`, usado por el informe de consumo). | `02_grants.sql`, `03_users.js`, `ReportingConnectionIT`, `ReportingMongoIT` | ✅ |
 | RNF-15 | **Sin credenciales en el repositorio** fuera de las de desarrollo. | Conexiones y secreto JWT por variables de entorno, con valores por defecto solo para desarrollo. `.env` y `config/` en `.gitignore`. | `application.properties`, `.gitignore` | ✅ |
 
 ### 3.3 Rendimiento
