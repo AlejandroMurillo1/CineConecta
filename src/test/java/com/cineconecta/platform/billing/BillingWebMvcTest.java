@@ -34,7 +34,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 @WebMvcTest(BillingController.class)
-@Import(com.cineconecta.platform.shared.config.SharedConfig.class)
+@Import({com.cineconecta.platform.shared.config.SharedConfig.class,
+        com.cineconecta.platform.shared.PermitAllSecurityTestConfig.class})
 class BillingWebMvcTest {
 
     private static final Instant NOW = Instant.parse("2026-11-25T15:00:00Z");
