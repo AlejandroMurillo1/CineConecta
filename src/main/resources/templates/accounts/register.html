@@ -18,7 +18,7 @@
             <div class="cc-field" th:classappend="${#fields.hasErrors('fullName')} ? 'cc-field-error'">
                 <label for="fullName">Nombre completo</label>
                 <input class="cc-input" id="fullName" type="text" th:field="*{fullName}"
-                       autocomplete="name" maxlength="120" required autofocus>
+                       autocomplete="name" maxlength="150" required autofocus>
                 <span class="cc-error-text" th:if="${#fields.hasErrors('fullName')}" th:errors="*{fullName}"></span>
             </div>
 

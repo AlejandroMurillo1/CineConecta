@@ -11,7 +11,7 @@ import jakarta.validation.constraints.Size;
 public class ProfileForm {
 
     @NotBlank(message = "Escribe un nombre para el perfil")
-    @Size(max = 50, message = "El nombre no puede superar 50 caracteres")
+    @Size(max = 60, message = "El nombre no puede superar 60 caracteres")
     private String name;
 
     @NotNull(message = "Elige una clasificación")

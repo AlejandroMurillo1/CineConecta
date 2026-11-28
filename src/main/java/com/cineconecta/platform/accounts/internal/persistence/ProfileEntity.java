@@ -18,7 +18,7 @@ import org.hibernate.type.SqlTypes;
 @Table(name = "profiles", schema = "cineconecta")
 public class ProfileEntity {
 
-    public static final int MAX_NAME_LENGTH = 50;
+    public static final int MAX_NAME_LENGTH = 60;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

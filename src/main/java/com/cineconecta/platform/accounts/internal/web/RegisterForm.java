@@ -9,7 +9,7 @@ import jakarta.validation.constraints.Size;
 public class RegisterForm {
 
     @NotBlank(message = "Escribe tu nombre completo")
-    @Size(max = 120, message = "El nombre no puede superar 120 caracteres")
+    @Size(max = 150, message = "El nombre no puede superar 150 caracteres")
     private String fullName;
 
     @NotBlank(message = "Escribe tu correo")

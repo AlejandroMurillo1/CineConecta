@@ -23,13 +23,13 @@ public class AccountEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer accountId;
 
-    @Column(nullable = false, updatable = false, length = 120)
+    @Column(nullable = false, updatable = false, length = 150)
     private String fullName;
 
     @Column(nullable = false, updatable = false, length = 254)
     private String email;
 
-    @Column(nullable = false, updatable = false, length = 100)
+    @Column(nullable = false, updatable = false, length = 255)
     private String passwordHash;
 
     @Column(nullable = false, updatable = false)
