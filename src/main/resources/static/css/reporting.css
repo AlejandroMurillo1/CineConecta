@@ -2,6 +2,8 @@
 
 .rp-filters {
     display: flex;
+    width: fit-content;
+    max-width: 100%;
     flex-wrap: wrap;
     align-items: flex-end;
     gap: 1rem;
@@ -34,4 +36,19 @@
 .rp-total td {
     font-weight: 700;
     border-top: 2px solid var(--cc-border);
+}
+
+
+.rp-chart-card {
+    margin-bottom: 1.5rem;
+}
+
+.rp-chart-title {
+    margin: 0 0 1rem;
+    font-size: 1.1rem;
+}
+
+.rp-chart-box {
+    position: relative;
+    height: 320px;
 }

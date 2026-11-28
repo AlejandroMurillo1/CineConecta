@@ -23,6 +23,10 @@
 }
 
 .bo-login-card {
+    /* app.css estira "body > main" a toda la altura y .cc-card reparte sus hijos con
+       space-between; aquí la tarjeta se ajusta a su contenido para no separar los textos. */
+    flex: 0 0 auto;
+    justify-content: flex-start;
     width: 100%;
     max-width: 380px;
 }

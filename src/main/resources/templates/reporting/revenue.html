@@ -37,6 +37,14 @@
         No hay pagos registrados en este período.
     </div>
 
+    <section class="cc-card rp-chart-card" th:if="${report != null and report.hasData()}">
+        <h2 class="rp-chart-title">Ingresos y suscripciones por plan</h2>
+        <div class="rp-chart-box">
+            <canvas id="rp-chart" data-report="revenue" role="img"
+                    aria-label="Gráfica de barras con el total recaudado y las suscripciones adquiridas por plan"></canvas>
+        </div>
+    </section>
+
     <table class="cc-table" th:if="${report != null}">
         <thead>
         <tr>
@@ -46,7 +54,8 @@
         </tr>
         </thead>
         <tbody>
-        <tr th:each="row : ${report.rows()}">
+        <tr th:each="row : ${report.rows()}"
+            th:attr="data-plan=${row.planName()}, data-revenue=${row.totalRevenue()}, data-count=${row.paymentCount()}">
             <td th:text="${row.planName()}">Estándar</td>
             <td class="rp-num" th:text="${row.paymentCount()}">0</td>
             <td class="rp-num">
@@ -65,5 +74,7 @@
         </tfoot>
     </table>
 </main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script th:src="@{/js/reporting-charts.js}"></script>
 </body>
 </html>
