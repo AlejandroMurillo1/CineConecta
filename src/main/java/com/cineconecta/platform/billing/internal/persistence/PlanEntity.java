@@ -19,7 +19,7 @@ public class PlanEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer planId;
 
-    @Column(nullable = false, length = 50, unique = true)
+    @Column(nullable = false, length = 60, unique = true)
     private String name;
 
     @Column(nullable = false, precision = 12, scale = 2, updatable = false)

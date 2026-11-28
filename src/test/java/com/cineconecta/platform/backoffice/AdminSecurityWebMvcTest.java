@@ -66,6 +66,16 @@ class AdminSecurityWebMvcTest {
     }
 
     @Test
+    void planManagementRequiresAdminLogin() throws Exception {
+        mockMvc.perform(get("/admin/plans"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/admin/login"));
+        mockMvc.perform(post("/admin/plans/1/deactivate").with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/admin/login"));
+    }
+
+    @Test
     void validCredentialsAuthenticateAsAdmin() throws Exception {
         mockMvc.perform(post("/admin/login").param("email", EMAIL).param("password", PASSWORD).with(csrf()))
                 .andExpect(redirectedUrl("/admin"))

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{shared/layout :: head('Planes', ~{::link})}">
+    <link rel="stylesheet" th:href="@{/css/backoffice.css}">
+</head>
+<body>
+<nav th:replace="~{backoffice/fragments/admin-nav :: nav('plans')}"></nav>
+
+<main id="main" class="cc-container">
+    <header class="cc-header cc-fade-in">
+        <h1>Planes</h1>
+        <p class="cc-muted">Crea, renombra, desactiva y reactiva los planes de suscripción. El precio y el máximo de
+            perfiles no se modifican después de crear el plan, para no alterar lo que ya pagaron las suscripciones vigentes.</p>
+    </header>
+
+    <div th:replace="~{shared/layout :: flash}"></div>
+
+    <div class="cc-table-wrap">
+        <table class="cc-table bo-plans">
+            <thead>
+            <tr>
+                <th>Plan</th>
+                <th class="bo-num">Precio mensual</th>
+                <th class="bo-num">Perfiles</th>
+                <th>Estado</th>
+                <th class="bo-num">Suscripciones vigentes</th>
+                <th>Acciones</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="plan : ${plans}">
+                <td>
+                    <form class="bo-inline-form" th:action="@{/admin/plans/{id}/rename(id=${plan.planId()})}" method="post">
+                        <input class="cc-input" type="text" name="name" maxlength="60" required
+                               th:aria-label="${'Nombre del plan ' + plan.name()}" th:value="${plan.name()}">
+                        <button type="submit" class="cc-btn cc-btn-secondary">Renombrar</button>
+                    </form>
+                </td>
+                <td class="bo-num">
+                    $<span th:text="${#numbers.formatDecimal(plan.price(), 1, 'POINT', 0, 'COMMA')}">0</span> COP
+                </td>
+                <td class="bo-num" th:text="${plan.maxProfiles()}">1</td>
+                <td>
+                    <span class="cc-badge" th:classappend="${plan.active()} ? ' cc-badge-success' : ' cc-badge-muted'"
+                          th:text="${plan.active()} ? 'Activo' : 'Inactivo'">Activo</span>
+                </td>
+                <td class="bo-num" th:text="${plan.activeSubscriptions()}">0</td>
+                <td>
+                    <form th:if="${plan.active()}" class="bo-inline-form"
+                          th:action="@{/admin/plans/{id}/deactivate(id=${plan.planId()})}" method="post"
+                          onsubmit="return confirm('¿Desactivar este plan? Dejará de ofrecerse; las suscripciones vigentes siguen hasta vencer.');">
+                        <button type="submit" class="cc-btn cc-btn-secondary">Desactivar</button>
+                    </form>
+                    <form th:unless="${plan.active()}" class="bo-inline-form"
+                          th:action="@{/admin/plans/{id}/activate(id=${plan.planId()})}" method="post">
+                        <button type="submit" class="cc-btn cc-btn-primary">Reactivar</button>
+                    </form>
+                </td>
+            </tr>
+            <tr th:if="${plans.isEmpty()}">
+                <td colspan="6" class="cc-muted bo-empty">Todavía no hay planes.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <section class="cc-card bo-plan-create">
+        <h2>Nuevo plan</h2>
+        <p class="cc-muted">El plan queda activo y disponible para contratar en cuanto se crea.</p>
+
+        <form class="cc-form" th:action="@{/admin/plans}" th:object="${form}" method="post" novalidate>
+            <div th:if="${#fields.hasGlobalErrors()}" class="cc-alert cc-alert-danger" role="alert">
+                <p th:each="err : ${#fields.globalErrors()}" th:text="${err}">Error</p>
+            </div>
+            <div class="cc-field" th:classappend="${#fields.hasErrors('name')} ? 'cc-field-error'">
+                <label for="name">Nombre</label>
+                <input class="cc-input" id="name" type="text" th:field="*{name}" maxlength="60" required>
+                <span class="cc-error-text" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></span>
+            </div>
+            <div class="cc-field" th:classappend="${#fields.hasErrors('price')} ? 'cc-field-error'">
+                <label for="price">Precio mensual (COP)</label>
+                <input class="cc-input" id="price" type="number" th:field="*{price}" min="0.01" step="0.01" required>
+                <span class="cc-error-text" th:if="${#fields.hasErrors('price')}" th:errors="*{price}"></span>
+            </div>
+            <div class="cc-field" th:classappend="${#fields.hasErrors('maxProfiles')} ? 'cc-field-error'">
+                <label for="maxProfiles">Máximo de perfiles</label>
+                <input class="cc-input" id="maxProfiles" type="number" th:field="*{maxProfiles}" min="1" max="10" step="1" required>
+                <span class="cc-hint">Entre 1 y 10.</span>
+                <span class="cc-error-text" th:if="${#fields.hasErrors('maxProfiles')}" th:errors="*{maxProfiles}"></span>
+            </div>
+            <div class="cc-actions">
+                <button type="submit" class="cc-btn cc-btn-primary">Crear plan</button>
+            </div>
+        </form>
+    </section>
+</main>
+
+<footer th:replace="~{shared/layout :: footer}"></footer>
+</body>
+</html>

@@ -39,6 +39,9 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class BillingQueryService implements SubscriptionApi, PlanApi, RevenueApi {
 
+    /** Longitud de {@code plans.name} en el esquema (VARCHAR(60)). */
+    public static final int MAX_NAME_LENGTH = 60;
+
     private final PlanRepository planRepository;
     private final SubscriptionRepository subscriptionRepository;
     private final PaymentRepository paymentRepository;
@@ -247,8 +250,8 @@ public class BillingQueryService implements SubscriptionApi, PlanApi, RevenueApi
             throw new IllegalArgumentException("El nombre del plan es obligatorio.");
         }
         String clean = name.strip();
-        if (clean.length() > 50) {
-            throw new IllegalArgumentException("El nombre del plan no puede superar 50 caracteres.");
+        if (clean.length() > MAX_NAME_LENGTH) {
+            throw new IllegalArgumentException("El nombre del plan no puede superar " + MAX_NAME_LENGTH + " caracteres.");
         }
         return clean;
     }

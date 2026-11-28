@@ -2,6 +2,8 @@ package com.cineconecta.platform.billing;
 
 import com.cineconecta.platform.accounts.ProfileApi;
 import com.cineconecta.platform.billing.internal.exceptions.ActiveSubscriptionAlreadyExistsException;
+import com.cineconecta.platform.billing.internal.exceptions.DuplicatePlanNameException;
+import com.cineconecta.platform.billing.internal.exceptions.PlanNotFoundException;
 import com.cineconecta.platform.billing.internal.exceptions.PaymentRejectedException;
 import com.cineconecta.platform.billing.internal.exceptions.TooManyActiveProfilesException;
 import com.cineconecta.platform.billing.internal.persistence.PaymentRepository;
@@ -175,6 +177,84 @@ class BillingRulesTest {
             throw new IllegalStateException(e);
         }
         return entity;
+    }
+
+    // RF-12: gestión de planes por el administrador
+
+    @Test
+    void createPlanTrimsNameAndCreatesItActive() {
+        when(planRepository.existsByNameIgnoreCase("Familiar")).thenReturn(false);
+        when(planRepository.save(any(PlanEntity.class))).thenAnswer(inv -> savedWithId(inv.getArgument(0)));
+
+        AdminPlanView created = queryService.createPlan("  Familiar ", new BigDecimal("45900.00"), 6);
+
+        assertEquals("Familiar", created.name());
+        assertTrue(created.active());
+        assertEquals(0L, created.activeSubscriptions());
+    }
+
+    @Test
+    void createPlanRejectsDuplicateNameIgnoringCase() {
+        when(planRepository.existsByNameIgnoreCase("básico")).thenReturn(true);
+
+        assertThrows(DuplicatePlanNameException.class,
+                () -> queryService.createPlan("básico", new BigDecimal("10000"), 1));
+        verify(planRepository, never()).save(any());
+    }
+
+    @Test
+    void createPlanValidatesPriceProfilesAndNameLength() {
+        assertThrows(IllegalArgumentException.class,
+                () -> queryService.createPlan("Gratis", BigDecimal.ZERO, 1));
+        assertThrows(IllegalArgumentException.class,
+                () -> queryService.createPlan("Grande", new BigDecimal("10000"), 11));
+        assertThrows(IllegalArgumentException.class,
+                () -> queryService.createPlan("x".repeat(61), new BigDecimal("10000"), 1));
+        verify(planRepository, never()).save(any());
+    }
+
+    @Test
+    void createPlanAcceptsNamesUpToTheSchemaLength() {
+        String sixty = "x".repeat(60);
+        when(planRepository.existsByNameIgnoreCase(sixty)).thenReturn(false);
+        when(planRepository.save(any(PlanEntity.class))).thenAnswer(inv -> savedWithId(inv.getArgument(0)));
+
+        assertEquals(sixty, queryService.createPlan(sixty, new BigDecimal("10000"), 1).name());
+    }
+
+    @Test
+    void renamePlanRejectsNameUsedByAnotherPlan() {
+        PlanEntity basic = planWithId(1, "Básico", new BigDecimal("16900.00"), 1, "Y");
+        when(planRepository.findById(1)).thenReturn(Optional.of(basic));
+        when(planRepository.existsByNameIgnoreCaseAndPlanIdNot("Premium", 1)).thenReturn(true);
+
+        assertThrows(DuplicatePlanNameException.class, () -> queryService.renamePlan(1, "Premium"));
+        assertEquals("Básico", basic.getName());
+    }
+
+    @Test
+    void renameAndToggleChangeTheEntity() {
+        PlanEntity basic = planWithId(1, "Básico", new BigDecimal("16900.00"), 1, "Y");
+        when(planRepository.findById(1)).thenReturn(Optional.of(basic));
+        when(planRepository.existsByNameIgnoreCaseAndPlanIdNot("Esencial", 1)).thenReturn(false);
+
+        queryService.renamePlan(1, " Esencial ");
+        queryService.setPlanActive(1, false);
+
+        assertEquals("Esencial", basic.getName());
+        assertEquals("N", basic.getIsActive());
+    }
+
+    @Test
+    void unknownPlanCannotBeToggled() {
+        when(planRepository.findById(99)).thenReturn(Optional.empty());
+
+        assertThrows(PlanNotFoundException.class, () -> queryService.setPlanActive(99, true));
+    }
+
+    /** Simula la identidad que asigna PostgreSQL al guardar. */
+    private static PlanEntity savedWithId(PlanEntity plan) {
+        return planWithId(4, plan.getName(), plan.getPrice(), plan.getMaxProfiles(), plan.getIsActive());
     }
 
     private static PlanEntity planWithId(int id, String name, BigDecimal price, int maxProfiles, String active) {
