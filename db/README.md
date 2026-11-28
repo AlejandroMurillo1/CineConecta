@@ -79,7 +79,7 @@ Administrador inicial de la aplicación: `admin@cineconecta.local` / `Admin123*`
 | `PLANS.isActive` (columna nueva) | Gestión de planes por el administrador: un plan inactivo no se ofrece en nuevas contrataciones. |
 | Esquema `cineconecta` | Separa los objetos del proyecto de `public` y permite dar permisos por esquema. |
 
-Las tablas, columnas, relaciones e índices únicos del modelo (`ux_accounts_email_ci`, `ux_profiles_name_ci`, `uq_plans_name`, `uq_payments_subscription`, `uq_payments_reference`) se conservan.
+Las tablas, columnas, relaciones e índices únicos del modelo (`ux_accounts_email_ci`, `ux_profiles_name_ci`, `uq_plans_name`, `uq_payments_subscription`, `uq_payments_reference`) se conservan. El inventario completo de objetos (tablas, restricciones, índices, vista, trigger, roles y privilegios) está en [`docs/02_catalogo_objetos_postgres.md`](../docs/02_catalogo_objetos_postgres.md).
 
 ## 4. Reglas del negocio que garantiza cada base
 
