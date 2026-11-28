@@ -52,20 +52,13 @@ POSTGRES_PORT=5434
 MONGO_PORT=27018
 ```
 
-**2. Datos de demostración**
+**2. Datos de demostración y de volumen**
 
 ```bash
-docker compose exec -T postgres psql -U cine -d cineconecta -v ON_ERROR_STOP=1 < db/demos/postgres/01_synthetic_billing.sql
-docker compose exec -T mongo mongosh -u cineOwner -p cine_owner_dev --authenticationDatabase cineconecta cineconecta < db/demos/mongo/01_demo_catalog.js
+./db/demos/load_all.sh      # bash o Git Bash, desde la raíz del proyecto
 ```
 
-Sesiones de reproducción históricas bajo distintos planes (para el informe de consumo, "Continuar viendo" y las marcas de visto). Van después de los dos anteriores, porque toman los perfiles y suscripciones de PostgreSQL y el catálogo publicado de MongoDB:
-
-```bash
-{ docker compose exec -T postgres psql -U cine -d cineconecta -qAt -v ON_ERROR_STOP=1 < db/demos/postgres/07_export_viewers.sql
-  cat db/demos/mongo/02_synthetic_sessions.js
-} | docker compose exec -T mongo mongosh --quiet -u cineOwner -p cine_owner_dev --authenticationDatabase cineconecta cineconecta
-```
+Carga, en orden, las cuentas de demostración, 20 000 cuentas de volumen con su historial de suscripciones y pagos, un catálogo de 150 contenidos generados, ≈ 200 000 sesiones de reproducción y "Mi lista". Tarda menos de un minuto y se puede repetir. El tamaño se cambia con variables (ver `db/README.md`).
 
 **3. Aplicación**
 

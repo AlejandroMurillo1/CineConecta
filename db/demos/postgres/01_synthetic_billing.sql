@@ -121,4 +121,14 @@ BEGIN
     END IF;
 END $$;
 
+-- La fecha de registro de las cuentas demo no puede ser posterior a su primera suscripción
+-- (las cuentas se crean hoy, pero su historial empieza meses atrás).
+UPDATE accounts a
+SET createdat = s.primera - INTERVAL '1 day'
+FROM (SELECT accountid, MIN(startsat) AS primera FROM subscriptions GROUP BY accountid) s
+WHERE s.accountid = a.accountid
+  AND a.createdat > s.primera
+  AND LOWER(a.email) IN ('ana.vigente@cineconecta.local', 'carlos.vencida@cineconecta.local',
+                         'lucia.downgrade@cineconecta.local', 'mateo.sinplan@cineconecta.local');
+
 COMMIT;

@@ -20,6 +20,12 @@
 //   - watchedSeconds <= durationSeconds y lastPosition <= durationSeconds.
 //   - Mezcla de comportamientos: ~50 % vistas completas (finished), ~30 % a medias
 //     (aparecen en "Continuar viendo") y ~20 % abandonadas al poco de empezar.
+//   - Popularidad: unos pocos títulos concentran muchas vistas y otros casi ninguna
+//     (peso determinista por contentId), para que los informes muestren diferencias.
+//
+// Volumen: depende de cuántos perfiles exporta 07_export_viewers.sql (por defecto los de
+// demostración más 3 400 perfiles de volumen, ≈ 200 000 sesiones). Inserta por lotes de
+// 5 000 para no tener todas las sesiones en memoria. db/demos/load_all.sh lo corre todo.
 //
 // Idempotente: borra solo los documentos marcados con synthetic: true y los
 // vuelve a generar. Las sesiones creadas desde la aplicación no se tocan. Con los
@@ -100,6 +106,41 @@ if (playables.length === 0) {
   abort('No hay contenidos publicados con duración. Cargue antes db/demos/mongo/01_demo_catalog.js.');
 }
 
+// Popularidad: unos pocos títulos concentran muchas vistas y otros casi no se ven, para que
+// los informes (y la analítica de bajo desempeño) tengan diferencias reales. El peso depende
+// solo del contentId (determinista) y, en las series, se reparte entre sus episodios.
+function popularity(contentId) {
+  let h = 0;
+  for (const ch of contentId.toHexString()) h = (Math.imul(h, 31) + ch.charCodeAt(0)) >>> 0;
+  return 1 / Math.pow(1 + (h % 100), 0.9);
+}
+const episodesPerContent = {};
+playables.forEach((p) => { const k = p.contentId.toHexString(); episodesPerContent[k] = (episodesPerContent[k] || 0) + 1; });
+playables.forEach((p) => { const k = p.contentId.toHexString(); p.weight = popularity(p.contentId) / episodesPerContent[k]; });
+
+// Contenido apto por clasificación, con pesos acumulados (hay pocas clasificaciones distintas).
+const allowedByRating = {};
+function allowedFor(maxAgeRating) {
+  if (!allowedByRating[maxAgeRating]) {
+    const list = playables.filter((p) => p.ageRating <= maxAgeRating);
+    const cumulative = [];
+    let total = 0;
+    list.forEach((p) => { total += p.weight; cumulative.push(total); });
+    allowedByRating[maxAgeRating] = { list, cumulative, total };
+  }
+  return allowedByRating[maxAgeRating];
+}
+function pickWeighted(r, allowed) {
+  const x = r() * allowed.total;
+  let lo = 0;
+  let hi = allowed.cumulative.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (allowed.cumulative[mid] > x) hi = mid; else lo = mid + 1;
+  }
+  return allowed.list[lo];
+}
+
 // ---------------------------------------------------------------- generación
 function sessionFor(r, viewer, planId, playable, startedAt, maxEnd) {
   const duration = playable.durationSeconds;
@@ -146,11 +187,32 @@ function sessionFor(r, viewer, planId, playable, startedAt, maxEnd) {
   return doc;
 }
 
-const sessions = [];
+// Se borran las sintéticas anteriores y se insertan por lotes, para no tener cientos de miles
+// de documentos en memoria a la vez.
+const BATCH = 5000;
+let removed = 0;
+let created = 0;
+let batch = [];
+function flush() {
+  if (batch.length === 0) return;
+  try {
+    cine.playback_sessions.insertMany(batch, { ordered: true });
+  } catch (error) {
+    abort(`No se pudieron guardar las sesiones (${created} ya guardadas; vuelva a correr el script): ${error.message}`);
+  }
+  created += batch.length;
+  batch = [];
+}
+try {
+  removed = cine.playback_sessions.deleteMany({ synthetic: true }).deletedCount;
+} catch (error) {
+  abort('No se pudieron borrar las sesiones sintéticas anteriores: ' + error.message);
+}
+
 let skippedProfiles = 0;
 for (const viewer of VIEWERS) {
-  const allowed = playables.filter((p) => p.ageRating <= viewer.maxAgeRating);
-  if (allowed.length === 0) {
+  const allowed = allowedFor(viewer.maxAgeRating);
+  if (allowed.list.length === 0) {
     skippedProfiles += 1;                                // p. ej. un perfil infantil de 0 años
     continue;
   }
@@ -180,23 +242,15 @@ for (const viewer of VIEWERS) {
       if (maxEnd - startedAt < 2 * MINUTE) {
         continue;
       }
-      sessions.push(sessionFor(r, viewer, sub.planId, pick(r, allowed), startedAt, maxEnd));
+      batch.push(sessionFor(r, viewer, sub.planId, pickWeighted(r, allowed), startedAt, maxEnd));
+      if (batch.length >= BATCH) flush();
     }
   }
 }
-
-let removed = 0;
-try {
-  removed = cine.playback_sessions.deleteMany({ synthetic: true }).deletedCount;
-  if (sessions.length > 0) {
-    cine.playback_sessions.insertMany(sessions, { ordered: true });
-  }
-} catch (error) {
-  abort('No se pudieron guardar las sesiones: ' + error.message);
-}
+flush();
 
 // ---------------------------------------------------------------- resumen
-print(`Sesiones sintéticas en ${DB_NAME}.playback_sessions: ${removed} borradas, ${sessions.length} creadas`);
+print(`Sesiones sintéticas en ${DB_NAME}.playback_sessions: ${removed} borradas, ${created} creadas`);
 print(`  perfiles: ${VIEWERS.length - skippedProfiles} con sesiones, ${skippedProfiles} sin contenido apto para su clasificación`);
 print('  por plan y tipo (planId · tipo · sesiones · minutos vistos):');
 cine.playback_sessions.aggregate([
