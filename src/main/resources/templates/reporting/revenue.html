@@ -18,18 +18,24 @@
             Las fechas se interpretan en hora de Colombia e incluyen el día inicial y el final.</p>
     </header>
 
-    <form class="cc-card rp-filters" method="get" th:action="@{/admin/reports/revenue}">
-        <label>Desde
-            <input type="date" name="from" th:value="${from}" required>
-        </label>
-        <label>Hasta
-            <input type="date" name="to" th:value="${to}" required>
-        </label>
-        <button type="submit" class="cc-btn cc-btn-primary">Consultar</button>
-        <a th:if="${report != null}"
-           th:href="@{/admin/reports/revenue.csv(from=${from}, to=${to})}"
-           class="cc-btn cc-btn-secondary">Exportar CSV</a>
-    </form>
+    <div class="rp-top" th:classappend="${report != null and report.hasData()} ? 'rp-top-with-chart'">
+        <section class="cc-card rp-chart-card" th:if="${report != null and report.hasData()}">
+            <h2 class="rp-chart-title">Ingresos y suscripciones por plan</h2>
+            <div class="rp-chart-box">
+                <canvas id="rp-chart" data-report="revenue" role="img"
+                        aria-label="Gráfica de barras con el total recaudado y las suscripciones adquiridas por plan"></canvas>
+            </div>
+        </section>
+        <form class="cc-card rp-filters" method="get" th:action="@{/admin/reports/revenue}">
+            <label>Desde
+                <input type="date" name="from" th:value="${from}" required>
+            </label>
+            <label>Hasta
+                <input type="date" name="to" th:value="${to}" required>
+            </label>
+            <button type="submit" class="cc-btn cc-btn-primary">Consultar</button>
+        </form>
+    </div>
 
     <div th:if="${errorMessage != null}" class="cc-alert cc-alert-warning" th:text="${errorMessage}">Aviso</div>
 
@@ -37,13 +43,11 @@
         No hay pagos registrados en este período.
     </div>
 
-    <section class="cc-card rp-chart-card" th:if="${report != null and report.hasData()}">
-        <h2 class="rp-chart-title">Ingresos y suscripciones por plan</h2>
-        <div class="rp-chart-box">
-            <canvas id="rp-chart" data-report="revenue" role="img"
-                    aria-label="Gráfica de barras con el total recaudado y las suscripciones adquiridas por plan"></canvas>
-        </div>
-    </section>
+    <div class="rp-table-bar" th:if="${report != null}">
+        <h2 class="rp-chart-title">Detalle por plan</h2>
+        <a th:href="@{/admin/reports/revenue.csv(from=${from}, to=${to})}"
+           class="cc-btn cc-btn-secondary" title="Descarga la tabla de abajo en formato CSV">Exportar tabla (CSV)</a>
+    </div>
 
     <table class="cc-table" th:if="${report != null}">
         <thead>
