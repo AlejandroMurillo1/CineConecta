@@ -106,6 +106,10 @@ La aplicación queda en http://localhost:8080 y el panel de administración en h
 
 Las pruebas `*IT` usan Testcontainers y necesitan Docker en ejecución.
 
+## Ver las bases con pgAdmin y Compass
+
+Para mirar los datos mientras se usa la aplicación (y cómo saber qué puertos usa cada PC): [`docs/guia_pgadmin_compass.md`](docs/guia_pgadmin_compass.md).
+
 ## Credenciales (solo desarrollo)
 
 Todas estas contraseñas son de desarrollo. En la nube se cambian (ver `db/README.md`) y nunca se suben al repositorio.
