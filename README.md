@@ -111,7 +111,7 @@ Todas estas contraseñas son de desarrollo. En la nube se cambian (ver `db/READM
 | `cine` | `cine` | Superusuario del contenedor; ejecuta los scripts | `docker-compose.yaml` |
 | `cine_owner` | `cine_owner_dev` | Dueño del esquema y sus objetos | `db/postgres/00_roles.sql` |
 | `cine_app` | `cine_app_dev` | Aplicación: lectura e inserción; actualización solo en columnas permitidas; sin DELETE | `db/postgres/00_roles.sql` |
-| `cine_report` | `cine_report_dev` | Solo lectura, para informes | `db/postgres/00_roles.sql` |
+| `cine_report` | `cine_report_dev` | Solo lectura; la aplicación lo usa para el informe de ingresos (`REPORT_POSTGRES_USER` / `REPORT_POSTGRES_PASSWORD`) | `db/postgres/00_roles.sql` |
 
 **MongoDB**: base `cineconecta`.
 
