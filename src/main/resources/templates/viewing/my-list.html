@@ -5,25 +5,49 @@
 <nav th:replace="~{shared/layout :: navbar('my-list')}"></nav>
 
 <main id="main" class="cc-container">
+    <div th:replace="~{shared/layout :: flash}"></div>
+
     <header class="cc-header">
         <h1>Mi lista</h1>
-        <p class="cc-muted">Agrega títulos desde su detalle en el <a th:href="@{/catalog}">catálogo</a>.
-            · <a th:href="@{/viewing/continue-watching}">Continuar viendo</a></p>
+        <p class="cc-muted">Lo que guardaste para ver después. Agrega títulos desde su detalle en el
+            <a th:href="@{/catalog}">catálogo</a>.</p>
     </header>
 
-    <p th:if="${error}" th:text="${error}" class="cc-alert cc-alert-warning" role="alert"></p>
+    <div th:if="${titles.isEmpty()}" class="cc-card cw-empty">
+        <p>Todavía no has guardado títulos.</p>
+        <a class="cc-btn cc-btn-primary" th:href="@{/catalog}">Explorar el catálogo</a>
+    </div>
 
-    <p th:if="${titles.isEmpty()}" class="cc-card">Todavía no has guardado títulos.</p>
-    <ul th:unless="${titles.isEmpty()}" class="cc-card">
-        <li th:each="title : ${titles}">
-            <a th:href="@{/catalog/{id}(id=${title.id()})}"><strong th:text="${title.title()}">Título</strong></a>
-            <span th:if="${!title.status().isEmpty()}" class="cc-muted" th:text="${title.status()}">Retirado</span>
-            <form th:action="@{/viewing/my-list/remove}" method="post" style="display:inline">
-                <input type="hidden" name="contentId" th:value="${title.id()}">
-                <button type="submit" class="cc-btn cc-btn-link">Quitar</button>
-            </form>
-        </li>
-    </ul>
+    <!--/* Mismas tarjetas que "Continuar viendo" (clases cw-* de app.css), en cuadrícula. */-->
+    <div th:unless="${titles.isEmpty()}" class="cw-wrap">
+        <div class="cw-row">
+            <article class="cw-card" th:each="title : ${titles}">
+                <a th:if="${title.available()}" class="cw-poster" th:href="@{/catalog/{id}(id=${title.id()})}"
+                   th:aria-label="${'Ver ' + title.title()}">
+                    <img th:src="@{${title.posterUrl() != null ? title.posterUrl() : '/images/posters/placeholder.svg'}}"
+                         th:alt="${'Afiche de ' + title.title()}" loading="lazy"
+                         th:attr="data-fallback=@{/images/posters/placeholder.svg}"
+                         onerror="this.onerror=null; this.src=this.dataset.fallback;">
+                    <span th:if="${!title.status().isEmpty()}" class="cw-badge" th:text="${title.status()}">Retirado</span>
+                </a>
+                <div th:unless="${title.available()}" class="cw-poster cw-poster-muted" aria-hidden="true">
+                    <img th:src="@{/images/posters/placeholder.svg}" alt="">
+                </div>
+
+                <div class="cw-body">
+                    <a th:if="${title.available()}" class="cw-title"
+                       th:href="@{/catalog/{id}(id=${title.id()})}" th:text="${title.title()}">Título</a>
+                    <span th:unless="${title.available()}" class="cw-title cc-muted" th:text="${title.title()}">Título no disponible</span>
+                    <p th:if="${title.typeLabel() != null}" class="cw-meta" th:text="${title.typeLabel()}">Película</p>
+                    <form class="cw-remove" th:action="@{/viewing/my-list/remove}" method="post">
+                        <input type="hidden" name="contentId" th:value="${title.id()}">
+                        <button type="submit" class="cc-btn cc-btn-link"
+                                th:aria-label="${'Quitar ' + title.title() + ' de Mi lista'}">✕ Quitar</button>
+                    </form>
+                </div>
+            </article>
+        </div>
+    </div>
 </main>
 
 <footer th:replace="~{shared/layout :: footer}"></footer>

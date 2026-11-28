@@ -2,6 +2,7 @@ package com.cineconecta.platform.viewing.internal.service;
 
 import com.cineconecta.platform.catalog.ContentStatus;
 import com.cineconecta.platform.catalog.ContentSummary;
+import com.cineconecta.platform.catalog.ContentType;
 import com.cineconecta.platform.catalog.ICatalogApi;
 import com.cineconecta.platform.viewing.internal.persistence.MyListStore;
 import org.bson.types.ObjectId;
@@ -33,10 +34,10 @@ public class MyListService {
             ContentSummary content = summaries.get(id);
             if (content == null || content.ageRating() > ageLimit
                     || (content.status() != ContentStatus.PUBLISHED && content.status() != ContentStatus.RETIRED)) {
-                titles.add(new SavedTitle(id, "Título no disponible", ""));
+                titles.add(new SavedTitle(id, "Título no disponible", "", null, null, false));
             } else {
                 String status = content.status() == ContentStatus.RETIRED ? "Retirado" : "";
-                titles.add(new SavedTitle(id, content.title(), status));
+                titles.add(new SavedTitle(id, content.title(), status, content.type(), content.posterUrl(), true));
             }
         }
 
@@ -65,5 +66,23 @@ public class MyListService {
         return new ObjectId(contentId.strip()).toHexString();
     }
 
-    public record SavedTitle(String id, String title, String status) {}
+    /**
+     * Título guardado. {@code available} es falso si ya no existe, dejó de estar publicado (salvo
+     * retirado) o supera la clasificación del perfil: se muestra sin afiche ni enlace, solo para quitarlo.
+     */
+    public record SavedTitle(String id, String title, String status, ContentType type, String posterUrl,
+                             boolean available) {
+
+        /** "Película", "Serie" o "Documental"; null si el título no está disponible. */
+        public String typeLabel() {
+            if (type == null) {
+                return null;
+            }
+            return switch (type) {
+                case MOVIE -> "Película";
+                case SERIES -> "Serie";
+                case DOCUMENTARY -> "Documental";
+            };
+        }
+    }
 }

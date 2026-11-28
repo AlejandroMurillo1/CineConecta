@@ -56,12 +56,48 @@ class ViewingCurrentProfileWebMvcTest {
     @Test
     void myListUsesTheProfileInUse() throws Exception {
         when(currentProfile.require()).thenReturn(ANA);
-        when(myList.list(7)).thenReturn(List.of(new MyListService.SavedTitle("c1", "Matrix", "PUBLISHED")));
+        when(myList.list(7)).thenReturn(List.of(new MyListService.SavedTitle("c1", "Matrix", "", ContentType.MOVIE, "/images/posters/c1.svg", true)));
 
         mockMvc.perform(get("/viewing/my-list"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("Matrix")));
         verify(myList).list(7);
+    }
+
+    @Test
+    void myListShowsCardsWithPosterTypeAndRemoveButton() throws Exception {
+        when(currentProfile.require()).thenReturn(ANA);
+        when(myList.list(7)).thenReturn(List.of(
+                new MyListService.SavedTitle("6740a1f0c3b2a1d4e5f60002", "Noche en San Antonio", "",
+                        ContentType.MOVIE, "/images/posters/6740a1f0c3b2a1d4e5f60002.svg", true),
+                new MyListService.SavedTitle("6740a1f0c3b2a1d4e5f60003", "Páramos", "Retirado",
+                        ContentType.DOCUMENTARY, null, true),
+                new MyListService.SavedTitle("6740a1f0c3b2a1d4e5f60009", "Título no disponible", "",
+                        null, null, false)));
+
+        mockMvc.perform(get("/viewing/my-list"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("cw-card")))
+                .andExpect(content().string(containsString("src=\"/images/posters/6740a1f0c3b2a1d4e5f60002.svg\"")))
+                .andExpect(content().string(containsString("href=\"/catalog/6740a1f0c3b2a1d4e5f60002\"")))
+                .andExpect(content().string(containsString("Película")))
+                .andExpect(content().string(containsString("Documental")))
+                .andExpect(content().string(containsString("Retirado")))
+                .andExpect(content().string(containsString("✕ Quitar")))
+                // El no disponible no enlaza al detalle, y Mi lista ya no enlaza a "Continuar viendo".
+                .andExpect(content().string(org.hamcrest.Matchers.not(containsString("href=\"/catalog/6740a1f0c3b2a1d4e5f60009\""))))
+                .andExpect(content().string(org.hamcrest.Matchers.not(containsString("/viewing/continue-watching"))));
+    }
+
+    @Test
+    void emptyMyListInvitesToExploreTheCatalog() throws Exception {
+        when(currentProfile.require()).thenReturn(ANA);
+        when(myList.list(7)).thenReturn(List.of());
+
+        mockMvc.perform(get("/viewing/my-list"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Todavía no has guardado títulos.")))
+                .andExpect(content().string(containsString("Explorar el catálogo")));
     }
 
     @Test

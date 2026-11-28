@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--
+  Sección "Catálogo" de la página de inicio. La carga shared/home.html con htmx desde
+  GET /catalog/home-section. Usa las tarjetas cw-* de app.css, las mismas de "Continuar viendo".
+  Sin perfil que pueda ver el catálogo (o sin títulos) no se dibuja nada.
+-->
+<section th:fragment="home-section" th:if="${titles != null and !titles.isEmpty()}"
+         class="cw-section cc-fade-in" aria-labelledby="catalog-home-title">
+    <div class="cw-section-header">
+        <h2 id="catalog-home-title">Catálogo</h2>
+        <a th:href="@{/catalog}">Ver todo</a>
+    </div>
+    <div class="cw-row">
+        <article class="cw-card" th:each="item : ${titles}"
+                 th:with="type=${item.type().name()},
+                          typeLabel=${type == 'MOVIE' ? 'Película' : (type == 'SERIES' ? 'Serie' : 'Documental')}">
+            <a class="cw-poster" th:href="@{/catalog/{id}(id=${item.id()})}"
+               th:aria-label="${'Ver ' + item.title()}">
+                <img th:src="@{${item.posterUrl() != null ? item.posterUrl() : '/images/posters/placeholder.svg'}}"
+                     th:alt="${'Afiche de ' + item.title()}" loading="lazy"
+                     th:attr="data-fallback=@{/images/posters/placeholder.svg}"
+                     onerror="this.onerror=null; this.src=this.dataset.fallback;">
+            </a>
+            <div class="cw-body">
+                <a class="cw-title" th:href="@{/catalog/{id}(id=${item.id()})}" th:text="${item.title()}">Título</a>
+                <p class="cw-meta" th:text="${typeLabel + ' · ' + item.year() + ' · ' + item.ageRating() + '+'}">Película · 2023 · 16+</p>
+            </div>
+        </article>
+    </div>
+</section>
+
+</body>
+</html>
