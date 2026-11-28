@@ -49,7 +49,9 @@ class SharedLayoutWebMvcTest {
                         containsString("href=\"/login\""),
                         containsString("href=\"/register\""),
                         not(containsString("Cerrar sesión")),
-                        not(containsString("Historial y pagos")))));
+                        not(containsString("Historial y pagos")),
+                        not(containsString("href=\"/catalog\"")),
+                        not(containsString("href=\"/profiles\"")))));
     }
 
     @Test
@@ -58,10 +60,37 @@ class SharedLayoutWebMvcTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
                         containsString("Cerrar sesión"),
+                        containsString("href=\"/catalog\""),
                         containsString("href=\"/viewing/my-list\""),
                         containsString(">Sofía</a>"),
                         containsString("href=\"/billing/plans\" class=\"active\""),
                         not(containsString("href=\"/register\"")))));
+    }
+
+    @Test
+    void withoutProfileInUseTheCatalogIsHiddenAndChoosingAProfileComesFirst() throws Exception {
+        String html = mockMvc.perform(get("/test/layout").with(user("42")))
+                .andReturn().getResponse().getContentAsString();
+
+        org.assertj.core.api.Assertions.assertThat(html)
+                .doesNotContain("href=\"/catalog\"", "href=\"/viewing/my-list\"")
+                .contains(">Elegir perfil</a>");
+        String links = html.substring(html.indexOf("cc-nav-links"));
+        org.assertj.core.api.Assertions.assertThat(links.indexOf("href=\"/profiles\""))
+                .as("perfiles es la primera opción del menú")
+                .isPositive()
+                .isLessThan(links.indexOf("href=\"/billing/plans\""));
+    }
+
+    @Test
+    void withProfileInUsePerfilesStillComesBeforeCatalog() throws Exception {
+        String html = mockMvc.perform(get("/test/layout").param("withProfile", "true").with(user("42")))
+                .andReturn().getResponse().getContentAsString();
+        String links = html.substring(html.indexOf("cc-nav-links"));
+
+        org.assertj.core.api.Assertions.assertThat(links.indexOf("href=\"/profiles\""))
+                .isPositive()
+                .isLessThan(links.indexOf("href=\"/catalog\""));
     }
 
     @Test

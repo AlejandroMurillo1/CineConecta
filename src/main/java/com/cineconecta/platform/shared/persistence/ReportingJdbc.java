@@ -29,6 +29,8 @@ public final class ReportingJdbc implements AutoCloseable {
         config.setMinimumIdle(0);
         // Igual que la conexión principal: no falla al arrancar si la base todavía no responde.
         config.setInitializationFailTimeout(-1);
+        // RNF-07: si la base no responde, fallar en 5 s (página 503) y no en los 30 s por defecto.
+        config.setConnectionTimeout(5_000);
         this.dataSource = new HikariDataSource(config);
         this.template = new JdbcTemplate(dataSource);
     }
