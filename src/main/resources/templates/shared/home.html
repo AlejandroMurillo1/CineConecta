@@ -18,6 +18,11 @@
          th:attr="hx-get=@{/viewing/continue-watching/home-section}"
          hx-trigger="load" hx-swap="outerHTML"></div>
 
+    <!--/* Muestra del catálogo para el perfil en uso (la dibuja el módulo catalog, también con htmx). */-->
+    <div th:if="${currentProfile != null}" id="catalog-home"
+         th:attr="hx-get=@{/catalog/home-section}"
+         hx-trigger="load" hx-swap="outerHTML"></div>
+
     <div class="cc-grid">
         <section class="cc-card">
             <div>

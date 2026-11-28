@@ -5,6 +5,8 @@ import com.cineconecta.platform.accounts.ProfileView;
 import com.cineconecta.platform.catalog.ViewerContext;
 import org.springframework.stereotype.Component;
 
+import java.util.OptionalInt;
+
 /**
  * Implementación real del puerto {@link ViewerContext} del catálogo: la clasificación máxima del
  * perfil en uso.
@@ -34,5 +36,13 @@ class ProfileViewerContext implements ViewerContext {
             throw new SubscriptionRequiredException();
         }
         return profile.maxAgeRating();
+    }
+
+    @Override
+    public OptionalInt allowedMaxAgeRating() {
+        return currentProfile.current()
+                .filter(profile -> entitlements.maxProfilesFor(profile.accountId()) > 0)
+                .map(profile -> OptionalInt.of(profile.maxAgeRating()))
+                .orElse(OptionalInt.empty());
     }
 }

@@ -79,6 +79,12 @@ class ProfileWebMvcTest {
         String catalog() {
             return "rating=" + viewer.maxAgeRating();
         }
+
+        @GetMapping("/test/catalog-section")
+        String section() {
+            var rating = viewer.allowedMaxAgeRating();
+            return rating.isPresent() ? "rating=" + rating.getAsInt() : "none";
+        }
     }
 
     private Cookie cookie(Integer profileId) {
@@ -225,6 +231,26 @@ class ProfileWebMvcTest {
         when(entitlements.maxProfilesFor(ACCOUNT)).thenReturn(0);
 
         mockMvc.perform(get("/test/catalog").cookie(cookie(7))).andExpect(redirectedUrl("/billing/plans"));
+    }
+
+    @Test
+    void embeddedCatalogSectionNeverRedirects() throws Exception {
+        // Sin perfil elegido.
+        mockMvc.perform(get("/test/catalog-section").header("HX-Request", "true").cookie(cookie(null)))
+                .andExpect(status().isOk())
+                .andExpect(content().string("none"));
+
+        // Con perfil, pero sin suscripción vigente.
+        when(profileService.selectable(ACCOUNT, 7)).thenReturn(Optional.of(ANA));
+        when(entitlements.maxProfilesFor(ACCOUNT)).thenReturn(0);
+        mockMvc.perform(get("/test/catalog-section").header("HX-Request", "true").cookie(cookie(7)))
+                .andExpect(status().isOk())
+                .andExpect(content().string("none"));
+
+        // Con perfil y suscripción.
+        when(entitlements.maxProfilesFor(ACCOUNT)).thenReturn(3);
+        mockMvc.perform(get("/test/catalog-section").cookie(cookie(7)))
+                .andExpect(content().string("rating=12"));
     }
 
     @Test

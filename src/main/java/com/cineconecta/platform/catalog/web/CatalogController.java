@@ -55,6 +55,22 @@ public class CatalogController {
         return htmxRequest != null ? "catalog/search :: results" : "catalog/search";
     }
 
+    /** Títulos que muestra la sección del catálogo en la página de inicio. */
+    static final int HOME_SECTION_SIZE = 12;
+
+    /**
+     * Sección "Catálogo" de la página de inicio, que la carga con htmx: los títulos más recientes
+     * que el perfil en uso puede ver. No redirige: sin perfil elegido o sin suscripción vigente
+     * responde vacío, y la página de inicio queda como estaba.
+     */
+    @GetMapping("/home-section")
+    public String homeSection(Model model) {
+        viewer.allowedMaxAgeRating().ifPresent(maxAgeRating -> model.addAttribute("titles",
+                search.search(maxAgeRating, new ContentSearchFilter(
+                        null, null, null, null, null, 0, HOME_SECTION_SIZE)).getContent()));
+        return "catalog/fragments/home-section :: home-section";
+    }
+
     /** Abre un contenido (en una serie, con sus temporadas y episodios). Si no es accesible: 404. */
     @GetMapping("/{id}")
     public String detail(@PathVariable String id, Model model) {

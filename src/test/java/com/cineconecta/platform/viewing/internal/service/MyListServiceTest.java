@@ -16,7 +16,10 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
 class MyListServiceTest {
@@ -62,6 +65,26 @@ class MyListServiceTest {
 
         service.remove(PROFILE_ID, TITLE_ID);
         verify(store).remove(PROFILE_ID, TITLE_ID);
+    }
+
+    @Test
+    void listCarriesPosterAndTypeAndMarksTitlesAboveTheRatingAsUnavailable() {
+        String adult = "6740a1f0c3b2a1d4e5f60002";
+        when(store.findIds(PROFILE_ID)).thenReturn(List.of(TITLE_ID, adult));
+        when(catalog.findSummaries(List.of(TITLE_ID, adult))).thenReturn(Map.of(
+                TITLE_ID, new ContentSummary(TITLE_ID, "Río Abajo", ContentType.SERIES, 13,
+                        ContentStatus.PUBLISHED, "/images/posters/rio.svg"),
+                adult, new ContentSummary(adult, "Noche", ContentType.MOVIE, 18,
+                        ContentStatus.PUBLISHED, "/images/posters/noche.svg")));
+
+        var items = service.list(PROFILE_ID);
+
+        assertEquals("/images/posters/rio.svg", items.get(0).posterUrl());
+        assertEquals("Serie", items.get(0).typeLabel());
+        assertTrue(items.get(0).available());
+        assertFalse(items.get(1).available());
+        assertEquals("Título no disponible", items.get(1).title());
+        assertNull(items.get(1).posterUrl());
     }
 
     @Test
