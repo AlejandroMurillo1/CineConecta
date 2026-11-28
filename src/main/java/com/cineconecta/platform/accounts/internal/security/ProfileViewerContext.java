@@ -3,7 +3,6 @@ package com.cineconecta.platform.accounts.internal.security;
 import com.cineconecta.platform.accounts.ProfileEntitlements;
 import com.cineconecta.platform.accounts.ProfileView;
 import com.cineconecta.platform.catalog.ViewerContext;
-import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 /**
@@ -18,7 +17,6 @@ import org.springframework.stereotype.Component;
  * devuelve 0 si no hay suscripción vigente, y todo plan permite al menos un perfil.</p>
  */
 @Component
-@Primary // gana sobre DevViewerContext (catalog) cuando el perfil local lo activa
 class ProfileViewerContext implements ViewerContext {
 
     private final CurrentProfileResolver currentProfile;
