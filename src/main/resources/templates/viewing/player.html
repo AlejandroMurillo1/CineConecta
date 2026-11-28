@@ -28,50 +28,65 @@
         </section>
     </th:block>
 
-    <section th:if="${playbackSession}" class="cc-card pl-player">
-        <div class="pl-screen">
-            <!-- Reproductor simulado: no hay archivo de video, solo la pantalla y el avance. -->
+    <section th:if="${playbackSession}" class="cc-card pl-player"
+             th:with="ended=${playbackSession.endedAt() != null}, playing=${playbackSession.playingSince() != null}">
+        <!-- Reproductor simulado: no hay archivo de video. Cada control envía la acción al servidor,
+             que la guarda en playback_sessions (pausa, reanudar, ir a un punto, finalizar). -->
+        <div class="pl-screen" th:classappend="${playing} ? 'is-playing'">
             <video id="playback-video" class="pl-video" preload="none" playsinline muted
                    aria-label="Reproductor de video"
                    th:data-position="${position}"
                    th:data-duration="${playbackSession.durationSeconds()}"
-                   th:data-playing="${playbackSession.playingSince() != null}"></video>
-            <span class="pl-status"
-                  th:text="${playbackSession.endedAt() != null} ? 'Finalizada' : (${playbackSession.playingSince() != null} ? 'Reproduciendo' : 'En pausa')">
-                En pausa</span>
-            <div class="pl-bar" role="progressbar" aria-label="Avance"
-                 aria-valuemin="0" th:aria-valuemax="${playbackSession.durationSeconds()}" th:aria-valuenow="${position}">
-                <div id="playback-bar" class="pl-bar-fill" th:style="|width: ${percent}%|"></div>
+                   th:data-playing="${playing}"></video>
+
+            <span class="pl-status" th:text="${ended} ? 'Finalizada' : (${playing} ? 'Reproduciendo' : 'En pausa')">En pausa</span>
+
+            <button th:if="${!ended and !playing}" type="submit" form="playback-controls"
+                    name="action" value="RESUME" class="pl-big-play" aria-label="Reanudar">▶</button>
+
+            <form id="playback-controls" class="pl-controls" th:if="${!ended}"
+                  th:action="@{/viewing/player/{id}(id=${playbackSession.id()})}" method="post">
+                <input type="hidden" name="position" id="playback-seek-position">
+                <button type="submit" hidden id="playback-seek" name="action" value="SEEK">Ir</button>
+
+                <div class="pl-track" id="playback-track" role="slider" tabindex="0"
+                     aria-label="Avance (clic para ir a ese punto)" aria-valuemin="0"
+                     th:aria-valuemax="${playbackSession.durationSeconds()}" th:aria-valuenow="${position}">
+                    <div id="playback-bar" class="pl-track-fill" th:style="|width: ${percent}%|"></div>
+                </div>
+
+                <div class="pl-controls-row">
+                    <button th:if="${playing}" type="submit" id="playback-pause" name="action" value="PAUSE"
+                            class="pl-icon-btn" aria-label="Pausar" title="Pausar">❚❚</button>
+                    <button th:if="${!playing}" type="submit" id="playback-resume" name="action" value="RESUME"
+                            class="pl-icon-btn" aria-label="Reanudar" title="Reanudar">▶</button>
+                    <span class="pl-time">
+                        <span id="playback-position" th:text="${positionText}">00:00:00</span>
+                        / <span th:text="${durationText}">00:00:00</span>
+                    </span>
+                    <span class="pl-spacer"></span>
+                    <button type="submit" name="action" value="FINISH" class="pl-icon-btn"
+                            aria-label="Finalizar" title="Finalizar">■</button>
+                </div>
+            </form>
+
+            <div th:if="${ended}" class="pl-controls">
+                <div class="pl-track"><div class="pl-track-fill" th:style="|width: ${percent}%|"></div></div>
+                <div class="pl-controls-row">
+                    <span class="pl-time"><span th:text="${positionText}">00:00:00</span>
+                        / <span th:text="${durationText}">00:00:00</span></span>
+                </div>
             </div>
         </div>
 
-        <p class="pl-time">
-            <span id="playback-position" th:text="${positionText}">00:00:00</span>
-            <span class="cc-muted">/</span>
-            <span th:text="${durationText}">00:00:00</span>
-        </p>
+        <p class="cc-muted pl-hint" th:if="${!ended}">Clic en el video para pausar o reanudar · clic en la barra
+            para ir a ese punto · barra espaciadora para pausar o reanudar.</p>
 
-        <form id="playback-checkpoint" hidden th:if="${playbackSession.playingSince() != null}"
+        <form id="playback-checkpoint" hidden th:if="${playing}"
               th:action="@{/viewing/player/{id}/checkpoint(id=${playbackSession.id()})}"
               method="post"></form>
 
-        <form id="playback-controls" class="pl-controls" th:if="${playbackSession.endedAt() == null}"
-              th:action="@{/viewing/player/{id}(id=${playbackSession.id()})}" method="post">
-            <button th:if="${playbackSession.playingSince() != null}" id="playback-pause"
-                    name="action" value="PAUSE" class="cc-btn cc-btn-secondary">❚❚ Pausar</button>
-            <button th:if="${playbackSession.playingSince() == null}"
-                    name="action" value="RESUME" class="cc-btn cc-btn-primary">▶ Reanudar</button>
-            <label class="pl-seek">Ir a
-                <input name="position" type="text" inputmode="numeric" placeholder="00:10:00"
-                       pattern="\d{1,6}|\d{1,2}(:[0-5]\d){1,2}" title="hh:mm:ss, por ejemplo 00:12:30">
-            </label>
-            <button name="action" value="SEEK" class="cc-btn cc-btn-secondary">Ir</button>
-            <button name="action" value="FINISH" class="cc-btn">■ Finalizar</button>
-        </form>
-
-        <p th:if="${playbackSession.endedAt() != null}">
-            <a th:href="@{/catalog}">Volver al catálogo</a>
-        </p>
+        <p th:if="${ended}"><a th:href="@{/catalog}">Volver al catálogo</a></p>
     </section>
 </main>
 
