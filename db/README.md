@@ -15,7 +15,7 @@ db/
     04_admin.js           administrador inicial
 ```
 
-Los datos de prueba (cuentas, perfiles, suscripciones, catálogo y sesiones) los carga el **seed en Java**; estos scripts solo crean la estructura, los usuarios y el administrador inicial.
+Estos scripts solo crean la estructura, los usuarios y el administrador inicial. Los datos de demostración (cuentas, perfiles, suscripciones, pagos y catálogo) están en `db/demos/` y se cargan aparte; ver el README de la raíz.
 
 ---
 
@@ -28,6 +28,8 @@ docker compose up -d
 ```
 
 La primera vez, cada contenedor ejecuta sus scripts en orden alfabético. **Los scripts solo corren con los volúmenes vacíos**: después de hacer pull de un cambio en `db/`, reinicialice con `docker compose down -v && docker compose up -d`.
+
+Con los puertos por defecto del compose (si los cambia en `.env`, ajuste la conexión):
 
 | Base | Usuario de la aplicación | Conexión |
 |---|---|---|
