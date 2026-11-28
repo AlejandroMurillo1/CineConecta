@@ -48,10 +48,10 @@
 |---|---|---|---|---|---|---|---|
 | RF-10 | Listar planes activos | Titular | `GET /billing/plans` | 03 | P2 | ✅ | Pública. |
 | RF-11 | Contratar suscripción con pago simulado (una transacción; solo planes activos) | Titular | `GET /billing/checkout/{planId}`, `POST /billing/checkout` | 01–05 | P2 | ✅ | Pago aprobado o rechazado. Pago y suscripción en una única transacción; contrataciones simultáneas serializadas por cuenta. |
-| RF-12.1 | Listar planes con su estado y número de suscripciones vigentes | Admin | — | 03, 04 | P2 | 🟡 | En la rama `feature/billing-admin-plans` (API del módulo), sin integrar ni pantalla. |
-| RF-12.2 | Crear plan (nombre, precio y máximo de perfiles) | Admin | — | 03 | P2 | 🟡 | Ídem. |
-| RF-12.3 | Desactivar o reactivar plan | Admin | — | 03 | P2 | 🟡 | Ídem. La columna `plans.isActive` ya existe. |
-| RF-12.4 | Editar el nombre de un plan | Admin | — | 03 | P2 | 🟡 | Ídem. |
+| RF-12.1 | Listar planes con su estado y número de suscripciones vigentes | Admin | `GET /admin/plans` | 03, 04 | P2 | ✅ | `PlanApi.listPlansForAdmin`; pantalla en billing, protegida por la cadena de administradores. |
+| RF-12.2 | Crear plan (nombre, precio y máximo de perfiles) | Admin | `POST /admin/plans` | 03 | P2 | ✅ | Nombre único sin distinguir mayúsculas, hasta 60 caracteres; precio > 0; perfiles entre 1 y 10. |
+| RF-12.3 | Desactivar o reactivar plan | Admin | `POST /admin/plans/{id}/deactivate`, `.../activate` | 03 | P2 | ✅ | Un plan inactivo deja de ofrecerse; las suscripciones vigentes siguen hasta vencer. |
+| RF-12.4 | Editar el nombre de un plan | Admin | `POST /admin/plans/{id}/rename` | 03 | P2 | ✅ | Precio y perfiles no se editan (`cine_app` solo tiene `UPDATE (name, isActive)`). |
 
 ### 1.3 Catálogo
 
@@ -99,8 +99,8 @@
 
 | Estado | RF |
 |---|---|
-| ✅ Implementado | 31: RF-01 a RF-11, RF-13 a RF-22, RF-24, RF-25, RF-27 a RF-34 |
-| 🟡 Parcial | 7: RF-12.1 a RF-12.4 (en rama), RF-23 y RF-26 (falta botón en el catálogo), RF-39 |
+| ✅ Implementado | 35: RF-01 a RF-22, RF-24, RF-25, RF-27 a RF-34 |
+| 🟡 Parcial | 3: RF-23 y RF-26 (falta botón en el catálogo), RF-39 |
 | ⏳ Pendiente | 4: RF-35 a RF-38 |
 
 **Lo que exige la sustentación ya funciona:** el flujo completo de contratación y visualización (RF-01, 02, 05, 09, 11, 20, 26, 28), los dos informes obligatorios (RF-33 y RF-34) y los rechazos por suscripción vencida y por clasificación no permitida. Para que el flujo de visualización no dependa de escribir ids a mano, lo más urgente es el punto pendiente de RF-23 y RF-26.
@@ -199,7 +199,7 @@ Los identificadores que cruzan bases (`accountId`, `profileId`, `planIdAtStart`,
 | # | Pendiente | Requerimientos | Resp. |
 |---|---|---|---|
 | 1 | Botones "Agregar a Mi lista" y "Reproducir" en el detalle del catálogo (con el episodio, en las series) | RF-23, RF-26 | P3 + P4 |
-| 2 | Integrar la gestión de planes del administrador, con pantalla | RF-12.1 a RF-12.4 | P2 |
+| 2 | ~~Integrar la gestión de planes del administrador, con pantalla~~ ✅ | RF-12.1 a RF-12.4 | P2 |
 | 3 | Documento de integración y matriz de fallos; respuesta 503 si una base no está disponible | RNF-06, RNF-07 | P5 (+ P1 para la página 503) |
 | 4 | Mediciones de índices en MongoDB (antes y después) | RNF-17 | P3, P4 |
 | 5 | Pantallas de viewing con el layout compartido | RNF-20 | P4 |

@@ -23,6 +23,10 @@
 }
 
 .bo-login-card {
+    /* app.css estira "body > main" a toda la altura y .cc-card reparte sus hijos con
+       space-between; aquí la tarjeta se ajusta a su contenido para no separar los textos. */
+    flex: 0 0 auto;
+    justify-content: flex-start;
     width: 100%;
     max-width: 380px;
 }
@@ -53,4 +57,36 @@
     background: var(--cc-surface-soft);
     color: var(--cc-text);
     font: inherit;
+}
+
+/* ---------- Planes (RF-12) ---------- */
+
+.bo-num {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.bo-inline-form {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+}
+
+.bo-plans .bo-inline-form .cc-input {
+    min-width: 10rem;
+}
+
+.bo-empty {
+    text-align: center;
+    padding: 2rem;
+}
+
+.bo-plan-create {
+    margin-top: 1.5rem;
+    max-width: 480px;
+}
+
+.bo-plan-create h2 {
+    margin-top: 0;
 }

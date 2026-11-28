@@ -46,6 +46,23 @@ class ContinueWatchingTest {
     }
 
     @Test
+    void showsEachSeriesOnceWithItsMostRecentEpisode() {
+        allowProfile();
+        var olderEpisode = episode("65f1a2b3c4d5e6f708192b01", "ep-1", 10, NOW.minusSeconds(300));
+        var newerEpisode = episode("65f1a2b3c4d5e6f708192b02", "ep-2", 20, NOW.minusSeconds(60));
+        var movie = session("65f1a2b3c4d5e6f708192b03", 30, NOW.minusSeconds(120));
+        when(store.latestPerTitle(7, 42)).thenReturn(List.of(olderEpisode, newerEpisode, movie));
+        when(catalog.findPlayables(org.mockito.ArgumentMatchers.anyList())).thenReturn(Map.of(
+                olderEpisode.key(), title(olderEpisode), newerEpisode.key(), title(newerEpisode),
+                movie.key(), title(movie)));
+
+        var items = service.continueWatching(42);
+
+        assertEquals(List.of("65f1a2b3c4d5e6f708192b02", "65f1a2b3c4d5e6f708192b03"),
+                items.stream().map(PlaybackService.ContinueItem::sessionId).toList());
+    }
+
+    @Test
     void resumesClosedSessionAtSavedPositionWithoutCopyingConsumption() {
         allowProfile();
         var previous = session(ID, 35, NOW.minusSeconds(100));
@@ -70,6 +87,11 @@ class ContinueWatchingTest {
 
     private PlaybackSession session(String id, int position, Instant activity) {
         return new PlaybackSession(id, 7, 42, id, null, ContentType.MOVIE, 3, 100,
+                NOW.minusSeconds(500), null, activity, position, position, false, 1, activity);
+    }
+
+    private PlaybackSession episode(String id, String episodeId, int position, Instant activity) {
+        return new PlaybackSession(id, 7, 42, ID, episodeId, ContentType.SERIES, 3, 100,
                 NOW.minusSeconds(500), null, activity, position, position, false, 1, activity);
     }
 

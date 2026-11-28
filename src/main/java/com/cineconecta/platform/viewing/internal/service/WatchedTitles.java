@@ -5,6 +5,7 @@ import com.cineconecta.platform.catalog.PlaybackKey;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -44,5 +45,20 @@ public final class WatchedTitles {
     /** Cuántos episodios distintos de la serie ya vio. */
     public int episodesOf(String contentId) {
         return episodesBySeries.getOrDefault(contentId, Set.of()).size();
+    }
+
+    /**
+     * Primer episodio sin ver, recorriendo las temporadas en orden (cada una con los ids de sus episodios).
+     * Devuelve {@code null} si no hay episodios o si ya vio todos.
+     */
+    public String firstUnwatchedEpisode(List<? extends List<String>> episodeIdsBySeason) {
+        for (List<String> season : episodeIdsBySeason) {
+            for (String episodeId : season) {
+                if (!episodes.contains(episodeId)) {
+                    return episodeId;
+                }
+            }
+        }
+        return null;
     }
 }

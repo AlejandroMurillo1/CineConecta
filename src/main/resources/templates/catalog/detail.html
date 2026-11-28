@@ -25,8 +25,12 @@
             <div class="cc-actions"
                  th:with="resumeSessionId=${resumableSessions != null ? resumableSessions.get(content.id) : null},
                           isSeries=${content.details instanceof T(com.cineconecta.platform.catalog.models.SeriesDetails)},
-                          firstEpisode=${isSeries and !#lists.isEmpty(content.details.seasons) and !#lists.isEmpty(content.details.seasons[0].episodes) ? content.details.seasons[0].episodes[0] : null},
-                          isWatched=${watched != null and (isSeries ? watched.episodesOf(content.id) > 0 : watched.content(content.id))}">
+                          seenEpisodes=${watched != null ? watched.episodesOf(content.id) : 0},
+                          seen=${watched != null and watched.content(content.id)}">
+                <p class="cat-watched-note" th:if="${seen}">✓ Ya lo viste. Puedes volver a verlo desde el inicio.</p>
+                <p class="cat-watched-note" th:if="${isSeries and seenEpisodes > 0}"
+                   th:text="${seenEpisodes == 1} ? '✓ Viste 1 episodio.' : |✓ Viste ${seenEpisodes} episodios.|">✓ Viste episodios.</p>
+
                 <form th:if="${resumeSessionId != null}"
                       th:action="@{/viewing/continue-watching/{sid}(sid=${resumeSessionId})}" method="post">
                     <button type="submit" class="cc-btn cc-btn-primary">▶ Continuar viendo</button>
@@ -36,16 +40,20 @@
                       th:action="@{/viewing/player}" method="post">
                     <input type="hidden" name="contentId" th:value="${content.id}">
                     <button type="submit" class="cc-btn cc-btn-primary"
-                            th:text="${isWatched ? '▶ Ver otra vez' : '▶ Reproducir'}">▶ Reproducir</button>
+                            th:text="${seen} ? '↺ Volver a ver' : '▶ Reproducir'">▶ Reproducir</button>
                 </form>
 
-                <form th:if="${resumeSessionId == null and isSeries and firstEpisode != null}"
-                      th:action="@{/viewing/player}" method="post">
-                    <input type="hidden" name="contentId" th:value="${content.id}">
-                    <input type="hidden" name="episodeId" th:value="${firstEpisode.episodeId}">
-                    <button type="submit" class="cc-btn cc-btn-primary"
-                            th:text="${isWatched ? '▶ Ver otra vez' : '▶ Reproducir'}">▶ Reproducir</button>
-                </form>
+                <!-- Serie: el primer episodio que falta; si ya vio todos, vuelve a empezar por el primero. -->
+                <th:block th:if="${resumeSessionId == null and isSeries and !#lists.isEmpty(content.details.seasons) and !#lists.isEmpty(content.details.seasons[0].episodes)}"
+                          th:with="nextEpisodeId=${watched != null ? watched.firstUnwatchedEpisode(content.details.seasons.![episodes.![episodeId]]) : null}">
+                    <form th:action="@{/viewing/player}" method="post">
+                        <input type="hidden" name="contentId" th:value="${content.id}">
+                        <input type="hidden" name="episodeId"
+                               th:value="${nextEpisodeId != null ? nextEpisodeId : content.details.seasons[0].episodes[0].episodeId}">
+                        <button type="submit" class="cc-btn cc-btn-primary"
+                                th:text="${nextEpisodeId == null and seenEpisodes > 0 ? '↺ Volver a ver' : (seenEpisodes > 0 ? '▶ Siguiente episodio' : '▶ Reproducir')}">▶ Reproducir</button>
+                    </form>
+                </th:block>
 
                 <form th:action="@{/viewing/my-list}" method="post">
                     <input type="hidden" name="contentId" th:value="${content.id}">
@@ -70,18 +78,23 @@
             <h3 th:text="${'Temporada ' + season.number}"></h3>
             <p class="cc-muted" th:text="${season.description}"></p>
             <ol class="cat-episode-list">
-                <li th:each="episode : ${season.episodes}">
+                <li th:each="episode : ${season.episodes}"
+                    th:with="seenEpisode=${watched != null and watched.episode(episode.episodeId)}"
+                    th:classappend="${seenEpisode} ? 'is-watched'">
                     <div class="cat-episode-info">
                         <strong th:text="${episode.number + '. ' + episode.title}"></strong>
                         <span class="cc-muted" th:text="${' — ' + episode.synopsis}"></span>
                     </div>
                     <div class="cat-episode-actions">
+                        <span class="cat-watched-chip" th:if="${seenEpisode}">✓ Visto</span>
                         <small class="cc-muted" th:text="${episode.durationSeconds / 60 + ' min'}"></small>
                         <form th:action="@{/viewing/player}" method="post">
                             <input type="hidden" name="contentId" th:value="${content.id}">
                             <input type="hidden" name="episodeId" th:value="${episode.episodeId}">
-                            <button type="submit" class="cc-btn cc-btn-primary cat-btn-sm"
-                                    th:text="${watched != null and watched.episode(episode.episodeId) ? '▶ Ver otra vez' : '▶ Reproducir'}">▶ Reproducir</button>
+                            <button type="submit" class="cc-btn cat-btn-sm"
+                                    th:classappend="${seenEpisode} ? 'cc-btn-secondary' : 'cc-btn-primary'"
+                                    th:aria-label="${(seenEpisode ? 'Volver a ver episodio ' : 'Reproducir episodio ') + episode.number}"
+                                    th:text="${seenEpisode} ? '↺ Volver a ver' : '▶ Reproducir'">▶ Reproducir</button>
                         </form>
                     </div>
                 </li>

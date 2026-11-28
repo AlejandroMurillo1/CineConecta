@@ -18,23 +18,41 @@
             Las fechas se interpretan en hora de Colombia e incluyen el día inicial y el final.</p>
     </header>
 
-    <form class="cc-card rp-filters" method="get" th:action="@{/admin/reports/revenue}">
-        <label>Desde
-            <input type="date" name="from" th:value="${from}" required>
-        </label>
-        <label>Hasta
-            <input type="date" name="to" th:value="${to}" required>
-        </label>
-        <button type="submit" class="cc-btn cc-btn-primary">Consultar</button>
-        <a th:if="${report != null}"
-           th:href="@{/admin/reports/revenue.csv(from=${from}, to=${to})}"
-           class="cc-btn cc-btn-secondary">Exportar CSV</a>
-    </form>
+    <div class="rp-top" th:classappend="${report != null and report.hasData()} ? 'rp-top-with-chart'">
+        <section class="cc-card rp-chart-card" th:if="${report != null and report.hasData()}">
+            <div class="rp-chart-head">
+                <h2 class="rp-chart-title">Por plan</h2>
+                <div class="rp-toggle" role="group" aria-label="Métrica de la gráfica">
+                    <button type="button" data-metric="revenue" aria-pressed="true">Ingresos</button>
+                    <button type="button" data-metric="count" aria-pressed="false">Suscripciones</button>
+                </div>
+            </div>
+            <div class="rp-chart-box">
+                <canvas id="rp-chart" data-report="revenue" role="img"
+                        aria-label="Gráfica de barras con el total recaudado o las suscripciones adquiridas por plan, según la métrica elegida"></canvas>
+            </div>
+        </section>
+        <form class="cc-card rp-filters" method="get" th:action="@{/admin/reports/revenue}">
+            <label>Desde
+                <input type="date" name="from" th:value="${from}" required>
+            </label>
+            <label>Hasta
+                <input type="date" name="to" th:value="${to}" required>
+            </label>
+            <button type="submit" class="cc-btn cc-btn-primary">Consultar</button>
+        </form>
+    </div>
 
     <div th:if="${errorMessage != null}" class="cc-alert cc-alert-warning" th:text="${errorMessage}">Aviso</div>
 
     <div th:if="${report != null and !report.hasData()}" class="cc-alert cc-alert-info">
         No hay pagos registrados en este período.
+    </div>
+
+    <div class="rp-table-bar" th:if="${report != null}">
+        <h2 class="rp-chart-title">Detalle por plan</h2>
+        <a th:href="@{/admin/reports/revenue.csv(from=${from}, to=${to})}"
+           class="cc-btn cc-btn-secondary" title="Descarga la tabla de abajo en formato CSV">Exportar tabla (CSV)</a>
     </div>
 
     <table class="cc-table" th:if="${report != null}">
@@ -46,7 +64,8 @@
         </tr>
         </thead>
         <tbody>
-        <tr th:each="row : ${report.rows()}">
+        <tr th:each="row : ${report.rows()}"
+            th:attr="data-plan=${row.planName()}, data-revenue=${row.totalRevenue()}, data-count=${row.paymentCount()}">
             <td th:text="${row.planName()}">Estándar</td>
             <td class="rp-num" th:text="${row.paymentCount()}">0</td>
             <td class="rp-num">
@@ -65,5 +84,7 @@
         </tfoot>
     </table>
 </main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script th:src="@{/js/reporting-charts.js}"></script>
 </body>
 </html>

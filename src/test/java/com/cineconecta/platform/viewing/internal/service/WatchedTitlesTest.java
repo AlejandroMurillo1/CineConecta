@@ -7,6 +7,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class WatchedTitlesTest {
@@ -31,5 +32,25 @@ class WatchedTitlesTest {
     void noneHasNothing() {
         assertFalse(WatchedTitles.NONE.content("movie"));
         assertEquals(0, WatchedTitles.NONE.episodesOf("series"));
+    }
+
+    @Test
+    void firstUnwatchedEpisodeFollowsSeasonOrder() {
+        var seasons = List.of(List.of("ep-1", "ep-2"), List.of("ep-3", "ep-4"));
+
+        assertEquals("ep-1", WatchedTitles.NONE.firstUnwatchedEpisode(seasons));
+        // Solo vio el episodio 3: el siguiente sigue siendo el primero que le falta.
+        assertEquals("ep-1", new WatchedTitles(List.of(new PlaybackKey("s", "ep-3"))).firstUnwatchedEpisode(seasons));
+        assertEquals("ep-3", new WatchedTitles(List.of(
+                new PlaybackKey("s", "ep-1"), new PlaybackKey("s", "ep-2"))).firstUnwatchedEpisode(seasons));
+    }
+
+    @Test
+    void firstUnwatchedEpisodeIsNullWhenEverythingWasSeenOrThereAreNoEpisodes() {
+        var seasons = List.of(List.of("ep-1"), List.of("ep-2"));
+        var all = new WatchedTitles(List.of(new PlaybackKey("s", "ep-1"), new PlaybackKey("s", "ep-2")));
+
+        assertNull(all.firstUnwatchedEpisode(seasons));
+        assertNull(WatchedTitles.NONE.firstUnwatchedEpisode(List.of()));
     }
 }

@@ -20,4 +20,13 @@ public interface SubscriptionRepository extends JpaRepository<SubscriptionEntity
     Optional<SubscriptionEntity> findActiveAt(@Param("accountId") int accountId, @Param("at") Instant at);
 
     List<SubscriptionEntity> findByAccountIdOrderByStartsAtDesc(int accountId);
+
+    @Query("""
+            SELECT s.planId, COUNT(s)
+            FROM SubscriptionEntity s
+            WHERE s.startsAt <= :at
+              AND :at < s.endsAt
+            GROUP BY s.planId
+            """)
+    List<Object[]> countActiveByPlanAt(@Param("at") Instant at);
 }
