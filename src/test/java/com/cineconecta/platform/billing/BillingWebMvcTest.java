@@ -69,7 +69,8 @@ class BillingWebMvcTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("billing/plans"))
                 .andExpect(content().string(containsString("Básico")))
-                .andExpect(content().string(containsString("Debes reducir tus perfiles activos")));
+                .andExpect(content().string(containsString("Debes reducir tus perfiles activos")))
+                .andExpect(content().string(containsString("href=\"/profiles\"")));
     }
 
     @Test
@@ -95,7 +96,8 @@ class BillingWebMvcTest {
                         .param("paymentMode", "APPROVED"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("Suscripción activada con éxito")))
-                .andExpect(content().string(containsString("SIM-1-ABCDEF")));
+                .andExpect(content().string(containsString("SIM-1-ABCDEF")))
+                .andExpect(content().string(containsString("Crear o elegir perfiles")));
 
         when(checkoutService.purchaseSubscription(7, 1, PaymentSimulationMode.REJECTED))
                 .thenThrow(new PaymentRejectedException("fondos insuficientes"));

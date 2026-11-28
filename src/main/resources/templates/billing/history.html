@@ -8,15 +8,9 @@
     <link rel="stylesheet" th:href="@{/css/billing.css}">
 </head>
 <body>
-<nav class="cc-navbar">
-    <a class="cc-brand" th:href="@{/billing/plans}">CineConecta</a>
-    <div class="cc-nav-links">
-        <a th:href="@{/billing/plans}">Planes</a>
-        <a class="active" th:href="@{/billing/history}">Historial y Pagos</a>
-    </div>
-</nav>
+<nav th:replace="~{shared/layout :: navbar('history')}"></nav>
 
-<main class="cc-container">
+<main id="main" class="cc-container">
     <header class="cc-header">
         <h1>Historial de suscripciones y pagos</h1>
         <p class="cc-muted">Registro inmutable de tus períodos contratados y pagos aprobados (hora Colombia).</p>
