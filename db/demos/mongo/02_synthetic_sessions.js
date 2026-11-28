@@ -40,8 +40,15 @@
 //   db.playback_sessions.deleteMany({ synthetic: true })
 // =============================================================================
 
+// Leído por stdin, mongosh sigue con la siguiente sentencia aunque una falle: ante un
+// error se usa quit(1) y no throw, para no llegar al deleteMany con datos incompletos.
+function abort(message) {
+  print('ERROR: ' + message);
+  quit(1);
+}
+
 if (typeof VIEWERS === 'undefined') {
-  throw new Error('Falta VIEWERS: ejecute este script precedido por la salida de '
+  abort('Falta VIEWERS: ejecute este script precedido por la salida de '
     + 'db/demos/postgres/07_export_viewers.sql (ver el comando al inicio del archivo).');
 }
 
@@ -90,7 +97,7 @@ cine.contents.find({ status: 'PUBLISHED' }).forEach((content) => {
   }
 });
 if (playables.length === 0) {
-  throw new Error('No hay contenidos publicados con duración. Cargue antes db/demos/mongo/01_demo_catalog.js.');
+  abort('No hay contenidos publicados con duración. Cargue antes db/demos/mongo/01_demo_catalog.js.');
 }
 
 // ---------------------------------------------------------------- generación
@@ -178,9 +185,14 @@ for (const viewer of VIEWERS) {
   }
 }
 
-const removed = cine.playback_sessions.deleteMany({ synthetic: true }).deletedCount;
-if (sessions.length > 0) {
-  cine.playback_sessions.insertMany(sessions, { ordered: true });
+let removed = 0;
+try {
+  removed = cine.playback_sessions.deleteMany({ synthetic: true }).deletedCount;
+  if (sessions.length > 0) {
+    cine.playback_sessions.insertMany(sessions, { ordered: true });
+  }
+} catch (error) {
+  abort('No se pudieron guardar las sesiones: ' + error.message);
 }
 
 // ---------------------------------------------------------------- resumen
