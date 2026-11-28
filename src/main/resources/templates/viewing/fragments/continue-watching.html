@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--
+  Tarjetas de "Continuar viendo": afiche con barra de progreso, título, episodio y lo que falta.
+  Uso: <div th:replace="~{viewing/fragments/continue-watching :: cards(${items})}"></div>
+  Estilos: sección "Continuar viendo" de app.css (clases cw-*).
+-->
+<div th:fragment="cards(items)" class="cw-row">
+    <article class="cw-card" th:each="item : ${items}">
+        <form class="cw-play" th:action="@{/viewing/continue-watching/{id}(id=${item.sessionId()})}" method="post">
+            <button type="submit" class="cw-poster"
+                    th:aria-label="${'Continuar ' + item.title() + (item.episodeLabel() != null ? ' ' + item.episodeLabel() : '')}">
+                <img th:src="@{${item.posterUrl() != null ? item.posterUrl() : '/images/posters/placeholder.svg'}}"
+                     th:alt="${'Afiche de ' + item.title()}" loading="lazy"
+                     th:attr="data-fallback=@{/images/posters/placeholder.svg}"
+                     onerror="this.onerror=null; this.src=this.dataset.fallback;">
+                <span class="cw-play-icon" aria-hidden="true">▶</span>
+                <span class="cw-progress" aria-hidden="true">
+                    <span class="cw-progress-bar" th:style="'width:' + ${item.progressPercent()} + '%'"></span>
+                </span>
+            </button>
+        </form>
+        <div class="cw-body">
+            <a class="cw-title" th:href="@{/catalog/{id}(id=${item.contentId()})}" th:text="${item.title()}">Título</a>
+            <p class="cw-episode" th:if="${item.episodeLabel() != null}">
+                <span th:text="${item.episodeLabel()}">T1 · E2</span><th:block th:if="${item.episodeTitle() != null}"> — <span th:text="${item.episodeTitle()}">Episodio</span></th:block>
+            </p>
+            <p class="cw-remaining" th:text="${'Te quedan ' + item.remainingMinutes() + ' min'}">Te quedan 30 min</p>
+        </div>
+    </article>
+</div>
+
+<!--
+  Sección de la página de inicio. La carga shared/home.html con htmx desde
+  GET /viewing/continue-watching/home-section. Sin títulos pendientes no se dibuja nada.
+-->
+<section th:fragment="home-section" th:if="${!items.isEmpty()}" class="cw-section cc-fade-in"
+         aria-labelledby="cw-home-title">
+    <div class="cw-section-header">
+        <h2 id="cw-home-title">Continuar viendo</h2>
+        <a th:href="@{/viewing/continue-watching}">Ver todo</a>
+    </div>
+    <div th:replace="~{viewing/fragments/continue-watching :: cards(${items})}"></div>
+</section>
+
+</body>
+</html>
