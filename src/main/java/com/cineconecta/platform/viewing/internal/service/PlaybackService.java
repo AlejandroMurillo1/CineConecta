@@ -126,6 +126,11 @@ public class PlaybackService {
         }
     }
 
+    /** Lo que el perfil ya vio (finalizado o con el 90 % o más), para marcarlo en el catálogo. */
+    public WatchedTitles watched(ProfileView profile) {
+        return new WatchedTitles(store.completedKeys(profile.accountId(), profile.profileId()));
+    }
+
     /** Título y episodio de la sesión, para mostrarlos en el reproductor (vacío si ya no está publicado). */
     public java.util.Optional<PlayableRef> describe(PlaybackSession session) {
         return catalog.findPlayable(session.contentId(), session.episodeId());

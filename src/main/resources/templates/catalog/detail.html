@@ -8,6 +8,7 @@
 
 <main id="main" class="cc-container">
     <a class="cat-back-link" th:href="@{/catalog}">← Volver al catálogo</a>
+    <div th:replace="~{shared/layout :: flash}"></div>
 
     <article class="cc-card cat-detail-hero cc-fade-in">
         <img class="cat-detail-poster" th:src="${content.metadata.posterUrl}" th:alt="${'Afiche de ' + content.metadata.title}">
@@ -27,10 +28,13 @@
                 <dt>Subtítulos</dt>
                 <dd th:text="${#strings.listJoin(content.metadata.subtitleLanguages, ', ')}"></dd>
             </dl>
-            <div class="cat-actions" th:with="isSeries=${content.type.name() == 'SERIES'}">
+            <div class="cat-actions" th:with="isSeries=${content.type.name() == 'SERIES'}, seen=${watched != null and watched.content(content.id)}, seenEpisodes=${watched != null ? watched.episodesOf(content.id) : 0}">
+                <p class="cat-watched-note" th:if="${seen}">✓ Ya lo viste. Puedes volver a verlo desde el inicio.</p>
+                <p class="cat-watched-note" th:if="${isSeries and seenEpisodes > 0}"
+                   th:text="${seenEpisodes == 1} ? '✓ Viste 1 episodio.' : |✓ Viste ${seenEpisodes} episodios.|">✓ Viste episodios.</p>
                 <form th:unless="${isSeries}" th:action="@{/viewing/player}" method="post">
                     <input type="hidden" name="contentId" th:value="${content.id}">
-                    <button type="submit" class="cc-btn cc-btn-primary">▶ Reproducir</button>
+                    <button type="submit" class="cc-btn cc-btn-primary" th:text="${seen} ? '↺ Volver a ver' : '▶ Reproducir'">▶ Reproducir</button>
                 </form>
                 <a th:if="${isSeries}" href="#episodios" class="cc-btn cc-btn-primary">▶ Ver episodios</a>
                 <form th:action="@{/viewing/my-list}" method="post">
@@ -47,18 +51,23 @@
             <h3 th:text="${'Temporada ' + season.number}"></h3>
             <p class="cc-muted" th:text="${season.description}"></p>
             <ol class="cat-episode-list">
-                <li th:each="episode : ${season.episodes}">
+                <li th:each="episode : ${season.episodes}"
+                    th:with="seenEpisode=${watched != null and watched.episode(episode.episodeId)}"
+                    th:classappend="${seenEpisode} ? 'is-watched'">
                     <div>
                         <strong th:text="${episode.number + '. ' + episode.title}"></strong>
                         <span class="cc-muted" th:text="${' — ' + episode.synopsis}"></span>
                     </div>
                     <div class="cat-episode-actions">
+                        <span class="cat-watched-chip" th:if="${seenEpisode}">✓ Visto</span>
                         <small class="cc-muted" th:text="${episode.durationSeconds / 60 + ' min'}"></small>
                         <form th:action="@{/viewing/player}" method="post">
                             <input type="hidden" name="contentId" th:value="${content.id}">
                             <input type="hidden" name="episodeId" th:value="${episode.episodeId}">
-                            <button type="submit" class="cc-btn cc-btn-primary cc-btn-sm"
-                                    th:aria-label="${'Reproducir episodio ' + episode.number}">▶ Reproducir</button>
+                            <button type="submit" class="cc-btn cc-btn-sm"
+                                    th:classappend="${seenEpisode} ? 'cc-btn-secondary' : 'cc-btn-primary'"
+                                    th:aria-label="${(seenEpisode ? 'Volver a ver episodio ' : 'Reproducir episodio ') + episode.number}"
+                                    th:text="${seenEpisode} ? '↺ Volver a ver' : '▶ Reproducir'">▶ Reproducir</button>
                         </form>
                     </div>
                 </li>

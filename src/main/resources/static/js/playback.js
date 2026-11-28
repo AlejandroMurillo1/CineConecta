@@ -1,6 +1,6 @@
 // Reproductor simulado: no hay archivo de video. La pantalla queda en negro y el avance se calcula
 // en el navegador a partir de la posición que entregó el servidor. Cada control (pausar, reanudar,
-// ir a un punto, finalizar) envía el formulario y el servidor lo guarda en playback_sessions.
+// ir a un punto y, al llegar al final, finalizar) envía el formulario y el servidor lo guarda en playback_sessions.
 const video = document.querySelector("#playback-video");
 const controls = document.querySelector("#playback-controls");
 const positionLabel = document.querySelector("#playback-position");
@@ -11,6 +11,7 @@ const pauseButton = document.querySelector("#playback-pause");
 const resumeButton = document.querySelector("#playback-resume");
 const seekButton = document.querySelector("#playback-seek");
 const seekPosition = document.querySelector("#playback-seek-position");
+const finishButton = document.querySelector("#playback-finish");
 
 /** 3725 → "01:02:05" */
 function formatTime(totalSeconds) {
@@ -85,8 +86,8 @@ if (video && controls) {
             render();
             if (current >= duration) {
                 clearInterval(timer);
-                // Al llegar al final se pausa en el servidor, que guarda la posición.
-                controls.requestSubmit(pauseButton);
+                // Al llegar al final se finaliza: el servidor la marca como vista y lleva al detalle.
+                controls.requestSubmit(finishButton ?? pauseButton);
             }
         }
 

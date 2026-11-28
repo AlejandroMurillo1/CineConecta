@@ -34,7 +34,8 @@ function content(id, type, status, title, titleNormalized, year, ageRating, genr
     synopsis: `Sinopsis de demostración de «${title}».`,
     year: NumberInt(year),
     ageRating: NumberInt(ageRating),
-    posterUrl: `https://cdn.cineconecta.local/posters/${id}.jpg`,
+    // Afiches servidos por la aplicación (src/main/resources/static/images/posters/).
+    posterUrl: `/images/posters/${id}.svg`,
     genres,
     countries: ['CO'],
     audioLanguages: ['es'],

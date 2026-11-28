@@ -44,7 +44,9 @@
                 </div>
                 <div class="cc-field cat-span-2">
                     <label for="meta-poster">URL del afiche</label>
-                    <input id="meta-poster" class="cc-input" type="url" th:field="*{metadata.posterUrl}" required>
+                    <input id="meta-poster" class="cc-input" type="text" th:field="*{metadata.posterUrl}" required
+                           pattern="(https?://|/)\S+" placeholder="https://… o /images/posters/…"
+                           title="URL absoluta (https://…) o ruta de la aplicación (/images/…)">
                 </div>
                 <div class="cc-field">
                     <label for="meta-genres">Géneros (separados por coma)</label>

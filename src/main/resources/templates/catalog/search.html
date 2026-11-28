@@ -52,6 +52,11 @@
             <a class="cat-card" th:each="item : ${page.content}" th:href="@{/catalog/{id}(id=${item.id})}">
                 <div class="cat-poster-frame">
                     <img th:src="${item.posterUrl}" th:alt="${'Afiche de ' + item.title}" loading="lazy">
+                    <th:block th:if="${watched != null}" th:with="isSeries=${#strings.toString(item.type) == 'SERIES'}">
+                        <span class="cat-watched-badge" th:if="${!isSeries and watched.content(item.id)}">✓ Visto</span>
+                        <span class="cat-watched-badge" th:if="${isSeries and watched.episodesOf(item.id) > 0}"
+                              th:text="${watched.episodesOf(item.id) == 1} ? '✓ 1 episodio visto' : |✓ ${watched.episodesOf(item.id)} episodios vistos|">✓ Visto</span>
+                    </th:block>
                 </div>
                 <div class="cat-card-body">
                     <span class="cat-eyebrow" th:text="${item.type}">PELÍCULA</span>

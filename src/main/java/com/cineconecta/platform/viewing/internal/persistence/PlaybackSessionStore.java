@@ -87,6 +87,23 @@ public class PlaybackSessionStore implements ConsumptionApi {
         }).into(new ArrayList<>());
     }
 
+    /**
+     * Títulos (y episodios) que el perfil ya vio: sesiones finalizadas o con la posición en el 90 %
+     * o más de la duración. Es la misma regla que {@code PlaybackSession.completed()}.
+     */
+    public List<com.cineconecta.platform.catalog.PlaybackKey> completedKeys(int accountId, int profileId) {
+        var reachedNinetyPercent = expr(new Document("$gte", List.of(
+                new Document("$multiply", List.of("$lastPosition", 10)),
+                new Document("$multiply", List.of("$durationSeconds", 9)))));
+        return collection()
+                .find(and(eq("accountId", accountId), eq("profileId", profileId),
+                        or(eq("finished", true), reachedNinetyPercent)))
+                .projection(new Document("contentId", 1).append("episodeId", 1))
+                .map(document -> new com.cineconecta.platform.catalog.PlaybackKey(
+                        document.getObjectId("contentId").toHexString(), document.getString("episodeId")))
+                .into(new ArrayList<>());
+    }
+
     public List<PlaybackSession> latestPerTitle(int accountId, int profileId) {
         return collection().aggregate(List.of(
                 match(and(eq("profileId", profileId), eq("accountId", accountId))),

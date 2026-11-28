@@ -183,7 +183,7 @@ Un documento por película, serie o documental, con la forma que escribe el mód
 | `synopsis` | string (1–2000) | Sinopsis |
 | `year` | int (1888–2100) | Año de estreno |
 | `ageRating` | int (0–18) | Clasificación por edad |
-| `posterUrl` | string | URL de la portada (`http://` o `https://`) |
+| `posterUrl` | string | URL de la portada: absoluta (`http://` o `https://`) o ruta servida por la aplicación (`/images/posters/...`) |
 | `genres` | array de string (≥ 1) | Géneros, sin repetidos |
 | `countries` | array de string (≥ 1) | Países de producción, código ISO de 2 letras (`CO`) |
 | `audioLanguages` | array de string (≥ 1) | Idiomas de audio, código de idioma (`es`, `en`, `pt-BR`) |
@@ -236,7 +236,7 @@ Los índices de género e idioma van separados porque MongoDB no permite dos arr
   "synopsis": "Una familia de pescadores del Magdalena enfrenta el cierre del puerto.",
   "year": 2024,
   "ageRating": 13,
-  "posterUrl": "https://cdn.cineconecta.local/covers/rio-abajo.jpg",
+  "posterUrl": "/images/posters/6740a1f0c3b2a1d4e5f60001.svg",
   "genres": ["Drama"],
   "countries": ["CO"],
   "audioLanguages": ["es"],
@@ -317,13 +317,13 @@ Un documento por sesión. Es un historial: una sesión cerrada no se modifica. E
 | `playingSince` | date o null | No | Interno: inicio del tramo en reproducción; `null` en pausa |
 | `watchedSeconds` | int ≥ 0 | Sí | Tiempo realmente visto, sin los saltos de "avanzar" |
 | `lastPosition` | int ≥ 0 | Sí | Última posición alcanzada |
-| `finished` | bool | Sí | El usuario la finalizó con el control "finalizar" |
+| `finished` | bool | Sí | El reproductor la finalizó al llegar al final del contenido (no hay botón de finalizar) |
 
 **Datos copiados.** `contentType`, `durationSeconds` y `planIdAtStart` son fotos inmutables del momento de inicio. No pueden quedar inconsistentes porque registran un hecho histórico, y permiten calcular los informes sin consultar el catálogo ni PostgreSQL por cada sesión.
 
 **Informe de consumo.** `ConsumptionApi.byPlanAndType` selecciona las sesiones iniciadas en el intervalo `[inicio, fin)`. Suma los segundos vistos y cuenta una sola vez cada perfil dentro de cada plan y tipo. El plan usado es `planIdAtStart`. Los segundos se convierten a minutos con dos decimales después de sumar. El módulo de informes puede consultar en PostgreSQL el nombre de cada plan.
 
-**Completado** (calculado, no se guarda): `finished = true` o `lastPosition ≥ 90 %` de `durationSeconds`.
+**Completado** (calculado, no se guarda): `finished = true` o `lastPosition ≥ 90 %` de `durationSeconds`. Lo completado sale de "Continuar viendo" y se marca como "✓ Visto" en el catálogo, con la opción de volver a verlo desde el inicio (una sesión nueva).
 
 | Índice | Campos | Consulta |
 |---|---|---|

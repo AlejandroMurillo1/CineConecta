@@ -56,6 +56,32 @@ class PlaybackSessionValidatorIT {
         }
     }
 
+    @Test
+    void completedKeysAreFinishedSessionsOrAtLeastNinetyPercent() {
+        Instant started = Instant.parse("2026-11-27T21:00:00Z");
+        try (var client = MongoClients.create(mongo.getReplicaSetUrl())) {
+            var store = new PlaybackSessionStore(new MongoTemplate(client, "cineconecta"));
+            String finishedMovie = new ObjectId().toHexString();
+            String ninetyPercent = new ObjectId().toHexString();
+            String halfway = new ObjectId().toHexString();
+            // Otro perfil (99) para comprobar que solo cuenta lo del perfil pedido.
+            store.insert(watchedAt(finishedMovie, 10, true, 43, started));
+            store.insert(watchedAt(ninetyPercent, 162, false, 43, started));
+            store.insert(watchedAt(halfway, 90, false, 43, started));
+            store.insert(watchedAt(new ObjectId().toHexString(), 180, true, 99, started));
+
+            var keys = store.completedKeys(8, 43).stream().map(key -> key.contentId()).sorted().toList();
+
+            assertEquals(java.util.stream.Stream.of(finishedMovie, ninetyPercent).sorted().toList(), keys);
+        }
+    }
+
+    private static PlaybackSession watchedAt(String contentId, int position, boolean finished, int profileId,
+                                             Instant started) {
+        return new PlaybackSession(new ObjectId().toHexString(), 8, profileId, contentId, null, ContentType.MOVIE,
+                2, 180, started, null, started.plusSeconds(position), position, position, finished, 1, started);
+    }
+
     private static PlaybackSession session(ContentType type, String episodeId, Instant started) {
         return new PlaybackSession(new ObjectId().toHexString(), 7, 42, new ObjectId().toHexString(),
                 episodeId, type, 2, 180, started, started, null, 0, 0, false, 0, started);

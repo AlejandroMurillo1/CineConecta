@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 600" width="400" height="600" role="img" aria-label="Páramos">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9cc5a1"/>
+      <stop offset="1" stop-color="#24432c"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="600" fill="url(#g)"/>
+  <path d="M0 330 L90 210 L160 290 L250 170 L400 330 Z" fill="#2f5d3a" opacity="0.85"/><path d="M0 380 L120 300 L210 360 L300 290 L400 380 Z" fill="#1d3b25"/><g fill="#d9e6a5" opacity="0.9"><circle cx="80" cy="400" r="7"/><circle cx="150" cy="410" r="6"/><circle cx="240" cy="395" r="8"/><circle cx="320" cy="412" r="6"/></g>
+  <rect x="0" y="430" width="400" height="170" fill="#000" opacity="0.35"/>
+  <text x="32" y="500" font-family="Georgia, 'Times New Roman', serif" font-size="38" font-weight="700" fill="#fff">Páramos</text>
+  <text x="32" y="545" font-family="Arial, Helvetica, sans-serif" font-size="18" letter-spacing="4" fill="#fff" opacity="0.8">AGUA QUE NACE</text>
+</svg>

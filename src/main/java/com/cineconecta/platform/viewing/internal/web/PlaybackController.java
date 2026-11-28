@@ -54,8 +54,13 @@ public class PlaybackController {
     }
 
     @GetMapping("/{sessionId}")
-    public String showSession(@PathVariable String sessionId, Model model) {
+    public String showSession(@PathVariable String sessionId, Model model, RedirectAttributes redirect) {
         PlaybackSession session = playback.find(currentProfile.require().profileId(), sessionId);
+        if (session.endedAt() != null) {
+            // Una sesión cerrada ya no se puede controlar: se lleva al detalle, donde se vuelve a ver.
+            redirect.addAttribute("contentId", session.contentId());
+            return "redirect:/catalog/{contentId}";
+        }
         int position = playback.currentPosition(session);
         model.addAttribute("playbackSession", session);
         model.addAttribute("position", position);
@@ -72,7 +77,16 @@ public class PlaybackController {
                           @RequestParam(required = false) String position, RedirectAttributes redirect) {
         try {
             // La posición llega como hh:mm:ss (también se aceptan solo segundos).
-            playback.apply(currentProfile.require().profileId(), sessionId, action, PlaybackTime.parse(position));
+            int profileId = currentProfile.require().profileId();
+            playback.apply(profileId, sessionId, action, PlaybackTime.parse(position));
+            if (action == PlaybackSession.Action.FINISH) {
+                PlaybackSession finished = playback.find(profileId, sessionId);
+                String title = playback.describe(finished).map(ref -> ref.episodeTitle() != null
+                        ? ref.title() + " — " + ref.episodeTitle() : ref.title()).orElse("el título");
+                redirect.addFlashAttribute("success", "Terminaste de ver «" + title + "».");
+                redirect.addAttribute("contentId", finished.contentId());
+                return "redirect:/catalog/{contentId}";
+            }
         } catch (IllegalArgumentException error) {
             redirect.addFlashAttribute("error", error.getMessage());
         }

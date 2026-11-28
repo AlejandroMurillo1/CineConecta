@@ -31,7 +31,9 @@
     <section th:if="${playbackSession}" class="cc-card pl-player"
              th:with="ended=${playbackSession.endedAt() != null}, playing=${playbackSession.playingSince() != null}">
         <!-- Reproductor simulado: no hay archivo de video. Cada control envía la acción al servidor,
-             que la guarda en playback_sessions (pausa, reanudar, ir a un punto, finalizar). -->
+             que la guarda en playback_sessions (pausa, reanudar, ir a un punto). Al llegar al final
+             se envía FINISH y el servidor lleva al detalle del título. Una sesión cerrada no se
+             muestra aquí: se redirige al detalle, donde se puede volver a ver. -->
         <div class="pl-screen" th:classappend="${playing} ? 'is-playing'">
             <video id="playback-video" class="pl-video" preload="none" playsinline muted
                    aria-label="Reproductor de video"
@@ -48,6 +50,8 @@
                   th:action="@{/viewing/player/{id}(id=${playbackSession.id()})}" method="post">
                 <input type="hidden" name="position" id="playback-seek-position">
                 <button type="submit" hidden id="playback-seek" name="action" value="SEEK">Ir</button>
+                <!-- No hay botón de finalizar: el reproductor la finaliza solo al llegar al final. -->
+                <button type="submit" hidden id="playback-finish" name="action" value="FINISH">Finalizar</button>
 
                 <div class="pl-track" id="playback-track" role="slider" tabindex="0"
                      aria-label="Avance (clic para ir a ese punto)" aria-valuemin="0"
@@ -64,19 +68,9 @@
                         <span id="playback-position" th:text="${positionText}">00:00:00</span>
                         / <span th:text="${durationText}">00:00:00</span>
                     </span>
-                    <span class="pl-spacer"></span>
-                    <button type="submit" name="action" value="FINISH" class="pl-icon-btn"
-                            aria-label="Finalizar" title="Finalizar">■</button>
                 </div>
             </form>
 
-            <div th:if="${ended}" class="pl-controls">
-                <div class="pl-track"><div class="pl-track-fill" th:style="|width: ${percent}%|"></div></div>
-                <div class="pl-controls-row">
-                    <span class="pl-time"><span th:text="${positionText}">00:00:00</span>
-                        / <span th:text="${durationText}">00:00:00</span></span>
-                </div>
-            </div>
         </div>
 
         <p class="cc-muted pl-hint" th:if="${!ended}">Clic en el video para pausar o reanudar · clic en la barra
@@ -85,8 +79,6 @@
         <form id="playback-checkpoint" hidden th:if="${playing}"
               th:action="@{/viewing/player/{id}/checkpoint(id=${playbackSession.id()})}"
               method="post"></form>
-
-        <p th:if="${ended}"><a th:href="@{/catalog}">Volver al catálogo</a></p>
     </section>
 </main>
 

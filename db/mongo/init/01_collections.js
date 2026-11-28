@@ -140,7 +140,7 @@ const contentsSchema = {
     synopsis: { bsonType: 'string', minLength: 1, maxLength: 2000 },
     year: { bsonType: 'int', minimum: 1888, maximum: 2100 },
     ageRating: { bsonType: 'int', minimum: 0, maximum: 18 },
-    posterUrl: { bsonType: 'string', pattern: '^https?://\\S+$' },
+    posterUrl: { bsonType: 'string', pattern: '^(https?://|/)\\S+$', description: 'URL absoluta o ruta servida por la aplicación (/images/...)' },
     genres: textList(1),
     countries: patternList(1, COUNTRY),
     audioLanguages: patternList(1, LANGUAGE),
@@ -198,7 +198,7 @@ const playbackSessionsSchema = {
     playingSince: { bsonType: ['date', 'null'], description: 'interno: inicio del tramo en reproducción; null en pausa' },
     watchedSeconds: { bsonType: 'int', minimum: 0, description: 'tiempo real visto, sin saltos' },
     lastPosition: { bsonType: 'int', minimum: 0 },
-    finished: { bsonType: 'bool', description: 'el usuario la finalizó con el control "finalizar"' },
+    finished: { bsonType: 'bool', description: 'el reproductor la finalizó al llegar al final del contenido' },
   },
   // Las series se reproducen por episodio: episodeId obligatorio solo en SERIES.
   anyOf: [
