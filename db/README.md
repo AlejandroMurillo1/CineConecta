@@ -26,10 +26,26 @@ Se ejecutan a mano, después de levantar las bases. Todos son idempotentes y las
 | `01_synthetic_billing.sql` | Cuentas con suscripciones vigentes, vencidas y cambio a plan menor |
 | `05_synthetic_accounts.sql` | Casos de cuentas y perfiles: límite del plan alcanzado, clasificaciones 0-18, perfiles inactivos, suscripción vencida, cuenta recién registrada y correo con mayúsculas (tabla de casos al inicio del script) |
 | `06_volume_accounts.sql` | Volumen para mediciones: N cuentas (`-v cuentas=20000` por defecto) con 1 a 5 perfiles; deterministas |
+| `07_export_viewers.sql` | Solo lectura: exporta perfiles activos y su historial de suscripciones para `mongo/02_synthetic_sessions.js` |
+
+### Datos de demostración (`db/demos/mongo/`)
+
+| Script | Contenido |
+|---|---|
+| `01_demo_catalog.js` | 5 contenidos con IDs fijos (película, serie, documental y un borrador) |
+| `02_synthetic_sessions.js` | Sesiones de reproducción cerradas dentro de la vigencia de cada suscripción, con `planIdAtStart` del plan de ese momento y solo contenidos aptos para la clasificación del perfil. Marcadas con `synthetic: true`; al repetirlo reemplaza solo esas |
 
 ```bash
 docker compose exec -T postgres psql -U cine -d cineconecta -v ON_ERROR_STOP=1 < db/demos/postgres/05_synthetic_accounts.sql
 docker compose exec -T postgres psql -U cine -d cineconecta -v ON_ERROR_STOP=1 -v cuentas=20000 < db/demos/postgres/06_volume_accounts.sql
+```
+
+Las sesiones sintéticas necesitan las dos bases a la vez: la salida de `07_export_viewers.sql` (una línea `const VIEWERS = [...]`) se concatena con el script de MongoDB:
+
+```bash
+{ docker compose exec -T postgres psql -U cine -d cineconecta -qAt -v ON_ERROR_STOP=1 < db/demos/postgres/07_export_viewers.sql
+  cat db/demos/mongo/02_synthetic_sessions.js
+} | docker compose exec -T mongo mongosh --quiet -u cineOwner -p cine_owner_dev --authenticationDatabase cineconecta cineconecta
 ```
 
 ---
