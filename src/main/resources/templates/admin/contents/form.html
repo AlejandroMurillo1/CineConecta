@@ -12,15 +12,32 @@
 
     <header class="cc-header cc-fade-in">
         <p class="cat-eyebrow">Ficha de contenido</p>
-        <h1 th:text="${contentId == null ? 'Nueva historia' : 'Editar ficha'}"></h1>
+        <h1 th:text="${contentId == null ? 'Nuevo contenido' : 'Editar ficha'}"></h1>
+        <p class="cc-muted" th:if="${contentId == null}">
+            Selecciona el tipo de contenido y completa la información requerida.
+        </p>
     </header>
 
+    <nav class="cc-card cat-type-selector" th:if="${contentId == null}" aria-label="Tipo de contenido"
+         style="flex-direction: row; justify-content: flex-start;">
+        <span class="cat-type-selector-label">Tipo de contenido:</span>
+        <a th:each="t : ${types}"
+           th:href="@{/admin/contents/new(type=${t})}"
+           th:class="${t == type ? 'cc-btn cc-btn-primary cat-btn-sm' : 'cc-btn cc-btn-secondary cat-btn-sm'}"
+           th:text="${t.name() == 'MOVIE' ? 'Película' : (t.name() == 'SERIES' ? 'Serie' : 'Documental')}">Tipo</a>
+    </nav>
+
     <form class="cc-form" th:object="${command}" method="post"
-          th:action="${contentId == null ? '/admin/contents/' + (#strings.equals(type, 'SERIES') ? 'series' : (#strings.equals(type, 'DOCUMENTARY') ? 'documentaries' : 'movies')) : '/admin/contents/' + contentId + '/' + (#strings.equals(type, 'SERIES') ? 'series' : (#strings.equals(type, 'DOCUMENTARY') ? 'documentaries' : 'movies'))}">
+          th:with="isMovie=${type == T(com.cineconecta.platform.catalog.ContentType).MOVIE},
+                   isSeries=${type == T(com.cineconecta.platform.catalog.ContentType).SERIES},
+                   isDoc=${type == T(com.cineconecta.platform.catalog.ContentType).DOCUMENTARY}"
+          th:action="${contentId == null
+              ? '/admin/contents/' + (isSeries ? 'series' : (isDoc ? 'documentaries' : 'movies'))
+              : '/admin/contents/' + contentId + '/' + (isSeries ? 'series' : (isDoc ? 'documentaries' : 'movies'))}">
         <input th:if="${contentId != null}" type="hidden" name="version" th:value="${version}">
 
-        <div th:if="${#fields.hasGlobalErrors()}" class="cc-alert cc-alert-danger" role="alert">
-            <p th:each="err : ${#fields.globalErrors()}" th:text="${err}" style="margin: 0;"></p>
+        <div th:if="${#fields.hasAnyErrors()}" class="cc-alert cc-alert-danger" role="alert">
+            <p th:each="err : ${#fields.allErrors()}" th:text="${err}" style="margin: 0.15rem 0;"></p>
         </div>
 
         <section class="cc-card cat-section">
@@ -44,9 +61,7 @@
                 </div>
                 <div class="cc-field cat-span-2">
                     <label for="meta-poster">URL del afiche</label>
-                    <input id="meta-poster" class="cc-input" type="text" th:field="*{metadata.posterUrl}" required
-                           pattern="(https?://|/)\S+" placeholder="https://… o /images/posters/…"
-                           title="URL absoluta (https://…) o ruta de la aplicación (/images/…)">
+                    <input id="meta-poster" class="cc-input" type="url" th:field="*{metadata.posterUrl}" required>
                 </div>
                 <div class="cc-field">
                     <label for="meta-genres">Géneros (separados por coma)</label>
@@ -76,79 +91,185 @@
         </section>
 
         <section class="cc-card cat-section">
-            <h2>Detalles <span class="cc-hint" th:text="${type}"></span></h2>
-            <div class="cat-form-grid">
-                <div class="cc-field" th:if="${type != T(com.cineconecta.platform.catalog.ContentType).SERIES}">
+            <h2>
+                Detalles
+                <span class="cc-badge cc-badge-muted"
+                      th:text="${isMovie ? 'Película' : (isSeries ? 'Serie' : 'Documental')}">Tipo</span>
+            </h2>
+
+            <!-- Película o Documental: duración y dirección -->
+            <div class="cat-form-grid" th:if="${isMovie or isDoc}">
+                <div class="cc-field">
                     <label for="det-duration">Duración (segundos)</label>
                     <input id="det-duration" class="cc-input" type="number" th:field="*{durationSeconds}" min="1" required>
                 </div>
-                <div class="cc-field" th:if="${type == T(com.cineconecta.platform.catalog.ContentType).MOVIE or type == T(com.cineconecta.platform.catalog.ContentType).DOCUMENTARY}">
+                <div class="cc-field">
                     <label for="det-directors">Dirección (coma)</label>
                     <input id="det-directors" class="cc-input" name="directors"
-                           th:value="${command.directors == null ? '' : #strings.listJoin(command.directors, ',')}" required>
-                </div>
-                <div class="cc-field" th:if="${type == T(com.cineconecta.platform.catalog.ContentType).DOCUMENTARY}">
-                    <label for="det-topics">Temas (coma)</label>
-                    <input id="det-topics" class="cc-input" name="topics"
-                           th:value="${command.topics == null ? '' : #strings.listJoin(command.topics, ',')}" required>
-                </div>
-                <div class="cc-field" th:if="${type == T(com.cineconecta.platform.catalog.ContentType).DOCUMENTARY}">
-                    <label for="det-interviewees">Entrevistados (coma)</label>
-                    <input id="det-interviewees" class="cc-input" name="interviewees"
-                           th:value="${command.interviewees == null ? '' : #strings.listJoin(command.interviewees, ',')}">
-                </div>
-                <div class="cc-field" th:if="${type == T(com.cineconecta.platform.catalog.ContentType).DOCUMENTARY}">
-                    <label for="det-sources">Fuentes (coma)</label>
-                    <input id="det-sources" class="cc-input" name="sources"
-                           th:value="${command.sources == null ? '' : #strings.listJoin(command.sources, ',')}">
+                           th:value="${command.directors == null ? '' : #strings.listJoin(command.directors, ',')}"
+                           placeholder="Director 1, Director 2" required>
                 </div>
 
-                <th:block th:if="${type == T(com.cineconecta.platform.catalog.ContentType).MOVIE}">
-                    <div class="cc-field">
-                        <label for="cast-0-name">Integrante 1</label>
-                        <input id="cast-0-name" class="cc-input" name="cast[0].name"
-                               th:value="${command.cast != null and !command.cast.empty ? command.cast[0].name : ''}" required>
+                <!-- Documental -->
+                <th:block th:if="${isDoc}">
+                    <div class="cc-field cat-span-2">
+                        <label for="det-topics">Temas (coma)</label>
+                        <input id="det-topics" class="cc-input" name="topics"
+                               th:value="${command.topics == null ? '' : #strings.listJoin(command.topics, ',')}"
+                               placeholder="naturaleza, historia" required>
                     </div>
                     <div class="cc-field">
-                        <label for="cast-0-char">Personaje</label>
-                        <input id="cast-0-char" class="cc-input" name="cast[0].character"
-                               th:value="${command.cast != null and !command.cast.empty ? command.cast[0].character : ''}">
+                        <label for="det-interviewees">Entrevistados (coma, opcional)</label>
+                        <input id="det-interviewees" class="cc-input" name="interviewees"
+                               th:value="${command.interviewees == null ? '' : #strings.listJoin(command.interviewees, ',')}">
                     </div>
                     <div class="cc-field">
-                        <label for="cast-1-name">Integrante 2</label>
-                        <input id="cast-1-name" class="cc-input" name="cast[1].name"
-                               th:value="${command.cast != null and command.cast.size() > 1 ? command.cast[1].name : ''}">
-                    </div>
-                    <div class="cc-field">
-                        <label for="cast-1-char">Personaje</label>
-                        <input id="cast-1-char" class="cc-input" name="cast[1].character"
-                               th:value="${command.cast != null and command.cast.size() > 1 ? command.cast[1].character : ''}">
-                    </div>
-                    <div class="cc-field">
-                        <label for="cast-2-name">Integrante 3</label>
-                        <input id="cast-2-name" class="cc-input" name="cast[2].name"
-                               th:value="${command.cast != null and command.cast.size() > 2 ? command.cast[2].name : ''}">
-                    </div>
-                    <div class="cc-field">
-                        <label for="cast-2-char">Personaje</label>
-                        <input id="cast-2-char" class="cc-input" name="cast[2].character"
-                               th:value="${command.cast != null and command.cast.size() > 2 ? command.cast[2].character : ''}">
+                        <label for="det-sources">Fuentes (coma, opcional)</label>
+                        <input id="det-sources" class="cc-input" name="sources"
+                               th:value="${command.sources == null ? '' : #strings.listJoin(command.sources, ',')}">
                     </div>
                 </th:block>
-
-                <p class="cc-hint cat-span-2" th:if="${type == T(com.cineconecta.platform.catalog.ContentType).SERIES}">
-                    Después de crear la serie puedes agregar temporadas y episodios desde su ficha.
-                </p>
             </div>
+
+            <!-- Película: reparto dinámico -->
+            <div th:if="${isMovie}">
+                <h3 class="cat-sub-heading">Reparto</h3>
+                <div id="cast-list" class="cat-cast-list">
+                    <div class="cat-cast-row"
+                         th:each="member, stat : ${command.cast != null and !command.cast.empty ? command.cast : {null}}">
+                        <div class="cc-field">
+                            <label th:for="${'cast-name-' + stat.index}">Integrante</label>
+                            <input th:id="${'cast-name-' + stat.index}" class="cc-input"
+                                   th:name="${'cast[' + stat.index + '].name'}"
+                                   th:value="${member != null ? member.name : ''}"
+                                   placeholder="Nombre del actor o actriz" required>
+                        </div>
+                        <div class="cc-field">
+                            <label th:for="${'cast-char-' + stat.index}">Personaje (opcional)</label>
+                            <input th:id="${'cast-char-' + stat.index}" class="cc-input"
+                                   th:name="${'cast[' + stat.index + '].character'}"
+                                   th:value="${member != null ? member.character : ''}"
+                                   placeholder="Personaje">
+                        </div>
+                        <button type="button" class="cc-btn cc-btn-secondary cat-btn-sm cast-remove"
+                                onclick="removeCastRow(this)"
+                                th:style="${stat.index == 0 and (command.cast == null or command.cast.size() <= 1) ? 'visibility:hidden' : ''}">
+                            Quitar
+                        </button>
+                    </div>
+                </div>
+                <div class="cc-actions">
+                    <button type="button" class="cc-btn cc-btn-secondary cat-btn-sm" onclick="addCastRow()">
+                        ＋ Agregar integrante
+                    </button>
+                </div>
+            </div>
+
+            <!-- Serie: creación requiere temporada y primer episodio -->
+            <th:block th:if="${isSeries and contentId == null}"
+                      th:with="firstSeason=${command.seasons != null and !command.seasons.empty ? command.seasons[0] : null},
+                               firstEp=${firstSeason != null and firstSeason.episodes != null and !firstSeason.episodes.empty ? firstSeason.episodes[0] : null}">
+                <h3 class="cat-sub-heading" style="margin-top: 0; border-top: 0; padding-top: 0;">Temporada inicial</h3>
+                <div class="cat-form-grid">
+                    <div class="cc-field">
+                        <label for="season-0-number">Número de temporada</label>
+                        <input id="season-0-number" class="cc-input" type="number" name="seasons[0].number"
+                               th:value="${firstSeason != null ? firstSeason.number : 1}" min="1" required>
+                    </div>
+                    <div class="cc-field">
+                        <label for="season-0-desc">Descripción de la temporada</label>
+                        <input id="season-0-desc" class="cc-input" name="seasons[0].description"
+                               th:value="${firstSeason != null ? firstSeason.description : ''}"
+                               placeholder="Resumen de la primera temporada" required>
+                    </div>
+                </div>
+
+                <h3 class="cat-sub-heading">Primer episodio</h3>
+                <div class="cat-form-grid">
+                    <div class="cc-field">
+                        <label for="ep-0-number">Número de episodio</label>
+                        <input id="ep-0-number" class="cc-input" type="number" name="seasons[0].episodes[0].number"
+                               th:value="${firstEp != null ? firstEp.number : 1}" min="1" required>
+                    </div>
+                    <div class="cc-field">
+                        <label for="ep-0-title">Título del episodio</label>
+                        <input id="ep-0-title" class="cc-input" name="seasons[0].episodes[0].title"
+                               th:value="${firstEp != null ? firstEp.title : ''}"
+                               placeholder="Piloto" required>
+                    </div>
+                    <div class="cc-field">
+                        <label for="ep-0-duration">Duración (segundos)</label>
+                        <input id="ep-0-duration" class="cc-input" type="number" name="seasons[0].episodes[0].durationSeconds"
+                               th:value="${firstEp != null and firstEp.durationSeconds > 0 ? firstEp.durationSeconds : ''}"
+                               min="1" required>
+                    </div>
+                    <div class="cc-field cat-span-2">
+                        <label for="ep-0-synopsis">Sinopsis del episodio</label>
+                        <textarea id="ep-0-synopsis" class="cat-textarea" name="seasons[0].episodes[0].synopsis"
+                                  rows="3" required th:text="${firstEp != null ? firstEp.synopsis : ''}"></textarea>
+                    </div>
+                </div>
+            </th:block>
+
+            <!-- Serie: edición solo modifica metadatos -->
+            <p class="cc-hint" th:if="${isSeries and contentId != null}">
+                Las temporadas y episodios se gestionan desde la ficha de la serie.
+            </p>
         </section>
 
         <div class="cc-actions">
-            <button class="cc-btn cc-btn-primary" type="submit">Guardar borrador</button>
+            <button class="cc-btn cc-btn-primary" type="submit"
+                    th:text="${contentId == null ? 'Guardar borrador' : 'Guardar cambios'}">Guardar borrador</button>
             <a class="cc-btn cc-btn-secondary" th:href="${contentId == null ? '/admin/contents' : '/admin/contents/' + contentId}">Cancelar</a>
         </div>
     </form>
 </main>
 
 <footer th:replace="~{shared/layout :: footer}"></footer>
+
+<script th:if="${type == T(com.cineconecta.platform.catalog.ContentType).MOVIE}">
+function reindexCastRows() {
+    const rows = document.querySelectorAll('#cast-list .cat-cast-row');
+    rows.forEach((row, idx) => {
+        const inputs = row.querySelectorAll('input');
+        const labels = row.querySelectorAll('label');
+        const removeBtn = row.querySelector('.cast-remove');
+        inputs[0].id = 'cast-name-' + idx;
+        inputs[0].name = 'cast[' + idx + '].name';
+        labels[0].setAttribute('for', inputs[0].id);
+        inputs[1].id = 'cast-char-' + idx;
+        inputs[1].name = 'cast[' + idx + '].character';
+        labels[1].setAttribute('for', inputs[1].id);
+        removeBtn.style.visibility = rows.length > 1 ? 'visible' : 'hidden';
+    });
+}
+
+function addCastRow() {
+    const list = document.getElementById('cast-list');
+    const row = document.createElement('div');
+    row.className = 'cat-cast-row';
+    row.innerHTML = `
+        <div class="cc-field">
+            <label>Integrante</label>
+            <input class="cc-input" placeholder="Nombre del actor o actriz" required>
+        </div>
+        <div class="cc-field">
+            <label>Personaje (opcional)</label>
+            <input class="cc-input" placeholder="Personaje">
+        </div>
+        <button type="button" class="cc-btn cc-btn-secondary cat-btn-sm cast-remove" onclick="removeCastRow(this)">Quitar</button>
+    `;
+    list.appendChild(row);
+    reindexCastRows();
+}
+
+function removeCastRow(btn) {
+    const list = document.getElementById('cast-list');
+    if (list.children.length > 1) {
+        btn.closest('.cat-cast-row').remove();
+        reindexCastRows();
+    }
+}
+</script>
 </body>
 </html>
