@@ -2,6 +2,7 @@ package com.cineconecta.platform.billing;
 
 import com.cineconecta.platform.accounts.ProfileApi;
 import com.cineconecta.platform.billing.internal.exceptions.ActiveSubscriptionAlreadyExistsException;
+import com.cineconecta.platform.billing.internal.exceptions.ConcurrentSubscriptionException;
 import com.cineconecta.platform.billing.internal.exceptions.DuplicatePlanNameException;
 import com.cineconecta.platform.billing.internal.exceptions.PlanNotFoundException;
 import com.cineconecta.platform.billing.internal.exceptions.PaymentRejectedException;
@@ -22,10 +23,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.CannotAcquireLockException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.math.BigDecimal;
+import java.sql.SQLException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -177,6 +181,39 @@ class BillingRulesTest {
             throw new IllegalStateException(e);
         }
         return entity;
+    }
+
+    @Test
+    void overlapResolvedByExclusionOrDeadlockIsReportedAsConcurrentSubscription() {
+        PlanEntity standard = planWithId(2, "Estándar", new BigDecimal("26900.00"), 3, "Y");
+        when(planRepository.findById(2)).thenReturn(Optional.of(standard));
+        when(subscriptionRepository.findActiveAt(10, FIXED_NOW)).thenReturn(Optional.empty());
+        when(profileApi.countActiveProfiles(10)).thenReturn(1);
+        when(subscriptionRepository.saveAndFlush(any()))
+                .thenThrow(new DataIntegrityViolationException("exclusión",
+                        new SQLException("conflicting key value violates exclusion constraint", "23P01")))
+                .thenThrow(new CannotAcquireLockException("deadlock",
+                        new SQLException("deadlock detected", "40P01")));
+
+        assertThrows(ConcurrentSubscriptionException.class,
+                () -> checkoutService.purchaseSubscription(10, 2, PaymentSimulationMode.APPROVED));
+        assertThrows(ConcurrentSubscriptionException.class,
+                () -> checkoutService.purchaseSubscription(10, 2, PaymentSimulationMode.APPROVED));
+        verify(paymentRepository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void otherDatabaseErrorsOnSubscriptionInsertAreNotMasked() {
+        PlanEntity standard = planWithId(2, "Estándar", new BigDecimal("26900.00"), 3, "Y");
+        when(planRepository.findById(2)).thenReturn(Optional.of(standard));
+        when(subscriptionRepository.findActiveAt(10, FIXED_NOW)).thenReturn(Optional.empty());
+        when(profileApi.countActiveProfiles(10)).thenReturn(1);
+        when(subscriptionRepository.saveAndFlush(any()))
+                .thenThrow(new DataIntegrityViolationException("check",
+                        new SQLException("violates check constraint", "23514")));
+
+        assertThrows(DataIntegrityViolationException.class,
+                () -> checkoutService.purchaseSubscription(10, 2, PaymentSimulationMode.APPROVED));
     }
 
     // RF-12: gestión de planes por el administrador
