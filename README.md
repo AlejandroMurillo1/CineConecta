@@ -132,7 +132,7 @@ Todas estas contraseñas son de desarrollo. En la nube se cambian (ver `db/READM
 | `root` | `root` | `admin` | Superusuario del contenedor | `docker-compose.yaml` |
 | `cineOwner` | `cine_owner_dev` | `cineconecta` | Dueño de la base (scripts de demostración) | `db/mongo/init/03_users.js` |
 | `cineApp` | `cine_app_dev` | `cineconecta` | Aplicación; solo lectura sobre `admin_users` | `db/mongo/init/03_users.js` |
-| `cineReport` | `cine_report_dev` | `cineconecta` | Solo lectura, para informes | `db/mongo/init/03_users.js` |
+| `cineReport` | `cine_report_dev` | `cineconecta` | Solo lectura; la aplicación lo usa para el informe de consumo (`REPORT_MONGODB_USER` / `REPORT_MONGODB_PASSWORD`) | `db/mongo/init/03_users.js` |
 
 ### Usuarios de la aplicación
 

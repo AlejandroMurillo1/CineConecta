@@ -3,7 +3,7 @@
 > Fuentes: el enunciado del proyecto y el documento de requerimientos acordado por el equipo (RF y RI).
 > Los RNF se derivan del enunciado ("Requisitos de implementación", "Evidencias y entrega").
 >
-> **Estado verificado contra el código de `develop` el 27 de noviembre de 2026.** Cada integrante actualiza la columna *Estado* de sus requerimientos en el mismo PR en que los implementa.
+> **Estado verificado contra el código de `develop` el 28 de noviembre de 2026.** Cada integrante actualiza la columna *Estado* de sus requerimientos en el mismo PR en que los implementa.
 >
 > Estados: ✅ implementado · 🟡 parcial · ⏳ pendiente
 
@@ -72,12 +72,12 @@
 
 | RF | Requerimiento | Actor | Ruta | RI | Resp. | Estado | Notas |
 |---|---|---|---|---|---|---|---|
-| RF-23 | Agregar a Mi lista | Perfil | `POST /viewing/my-list` | 02, 04, 06, 08 | P4 | 🟡 | Funciona sin duplicados, pero se agrega escribiendo el id del contenido. **Falta el botón "Agregar a Mi lista" en el detalle del catálogo.** |
+| RF-23 | Agregar a Mi lista | Perfil | `POST /viewing/my-list` | 02, 04, 06, 08 | P4 | ✅ | Botón "+ Mi lista" en el detalle del catálogo. Sin duplicados; solo contenidos publicados y permitidos para el perfil. |
 | RF-24 | Quitar de Mi lista | Perfil | `POST /viewing/my-list/remove` | 08 | P4 | ✅ | |
 | RF-25 | Ver Mi lista | Perfil | `GET /viewing/my-list` | 06, 08 | P4 | ✅ | Marca los contenidos retirados. |
-| RF-26 | Iniciar reproducción | Perfil | `POST /viewing/player` | 02, 04, 06, 07, 09, 10 | P4 | 🟡 | Verifica cuenta, perfil activo, suscripción, contenido publicado y clasificación (ambas bases). **Falta el botón "Reproducir" en el detalle del catálogo**; hoy se escribe el id del contenido o del episodio. |
+| RF-26 | Iniciar reproducción | Perfil | `POST /viewing/player` | 02, 04, 06, 07, 09, 10 | P4 | ✅ | Botón "Reproducir" en el detalle (en las series, uno por episodio; "Volver a ver" si ya se vio). Verifica cuenta, perfil activo, suscripción, contenido publicado y clasificación (ambas bases). |
 | RF-27 | Pausar, reanudar y avanzar (no priorizar) | Perfil | `POST /viewing/player/{sesión}` | 09, 10 | P4 | ✅ | Acciones `PAUSE`, `RESUME`, `SEEK` y `CHECKPOINT`. El tiempo visto excluye los saltos. |
-| RF-28 | Finalizar reproducción | Perfil | `POST /viewing/player/{sesión}` (`FINISH`) | 09, 10 | P4 | ✅ | Completada al finalizar o al alcanzar el 90 %. |
+| RF-28 | Finalizar reproducción | Sistema | `POST /viewing/player/{sesión}` (`FINISH`) | 09, 10 | P4 | ✅ | Automática: el reproductor la finaliza al llegar al final del contenido y lleva al detalle (no hay botón de finalizar). Completada si se finalizó o si alcanzó el 90 %; lo completado sale de "Continuar viendo" y se marca como visto en el catálogo. |
 | RF-29 | Ver "Continuar viendo" | Perfil | `GET /viewing/continue-watching` | 06, 10 | P4 | ✅ | Ordenado por actividad reciente; excluye los retirados. |
 | RF-30 | Cerrar sesiones abandonadas (proceso del sistema) | Sistema | Tarea programada cada 30 s | 09 | P4 | ✅ | `AbandonedPlaybackCleanup`. |
 
@@ -88,7 +88,7 @@
 | RF-31 | Iniciar sesión (admin) | Admin | `GET/POST /admin/login` | 11 | P5 | ✅ | Usuarios en MongoDB (`admin_users`) con BCrypt. |
 | RF-32 | Cerrar sesión (admin) | Admin | `POST /admin/logout` | — | P5 | ✅ | |
 | RF-33 | Ingresos por plan | Admin | `GET /admin/reports/revenue` | 12 | P5 | ✅ | Filtro de fechas. Lee PostgreSQL con `cine_report`. |
-| RF-34 | Consumo por plan y tipo | Admin | `GET /admin/reports/consumption` | 13 | P5 | ✅ | Combina MongoDB (sesiones) y PostgreSQL (planes); plan vigente al iniciar cada sesión. |
+| RF-34 | Consumo por plan y tipo | Admin | `GET /admin/reports/consumption` | 13 | P5 | ✅ | Combina MongoDB (sesiones, leídas con `cineReport`) y PostgreSQL (planes); plan vigente al iniciar cada sesión. |
 | RF-35 | Rendimiento del catálogo por género, tipo y período | Admin | — | 14 | P5 | ⏳ | |
 | RF-36 | Finalización y abandono de contenidos | Admin | — | 15 | P5 | ⏳ | |
 | RF-37 | Contenidos de bajo desempeño | Admin | — | 16 | P5 | ⏳ | |
@@ -99,11 +99,11 @@
 
 | Estado | RF |
 |---|---|
-| ✅ Implementado | 35: RF-01 a RF-22, RF-24, RF-25, RF-27 a RF-34 |
-| 🟡 Parcial | 3: RF-23 y RF-26 (falta botón en el catálogo), RF-39 |
+| ✅ Implementado | 37: RF-01 a RF-34 |
+| 🟡 Parcial | 1: RF-39 (CSV hecho para RF-33 y RF-34; faltan los de RF-35 a RF-38) |
 | ⏳ Pendiente | 4: RF-35 a RF-38 |
 
-**Lo que exige la sustentación ya funciona:** el flujo completo de contratación y visualización (RF-01, 02, 05, 09, 11, 20, 26, 28), los dos informes obligatorios (RF-33 y RF-34) y los rechazos por suscripción vencida y por clasificación no permitida. Para que el flujo de visualización no dependa de escribir ids a mano, lo más urgente es el punto pendiente de RF-23 y RF-26.
+**Lo que exige la sustentación ya funciona:** el flujo completo de contratación y visualización (RF-01, 02, 05, 09, 11, 20, 26, 28), los dos informes obligatorios (RF-33 y RF-34) y los rechazos por suscripción vencida y por clasificación no permitida. Los informes de analítica (RF-35 a RF-38) los agregó el equipo; el enunciado solo exige los dos anteriores.
 
 ---
 
@@ -142,7 +142,7 @@ Los identificadores que cruzan bases (`accountId`, `profileId`, `planIdAtStart`,
 | RNF-04 | **Sin períodos superpuestos, ni siquiera con solicitudes simultáneas**, y sin superar el máximo de perfiles. | `pg_advisory_xact_lock(accountId)`, compartido por contratación y perfiles, + restricción `EXCLUDE` como segunda barrera. | `BillingTransactionIT` (dos contrataciones simultáneas), `ProfileRulesIT` (dos creaciones simultáneas) | ✅ |
 | RNF-05 | **Nada se borra y el historial no se modifica.** Perfiles, planes y contenidos se desactivan o retiran; las sesiones cerradas no cambian; los ids no se reutilizan. | Privilegios: `cine_app` sin `DELETE` y con solo `INSERT` en el historial. Los contenidos se retiran por estado. Secuencias IDENTITY. | `db/postgres/02_grants.sql`, `db/mongo/init/03_users.js` | ✅ |
 | RNF-06 | **Referencias entre bases verificadas por la aplicación**, sin suponer que una transacción relacional confirma o revierte escrituras en MongoDB. | Ids enteros de PostgreSQL copiados en MongoDB y verificados antes de escribir (perfil activo y de la cuenta, suscripción vigente, contenido publicado y clasificación). | `ViewingAccess`, `ProfileViewerContext`, `docs/data-model.md` §3 | 🟡 Falta el documento de integración con la matriz de fallos (`docs/03_integracion_y_fallos.md`, P5). |
-| RNF-07 | **Comportamiento definido si una base no está disponible o una operación se interrumpe.** | Hoy se muestra una página de error genérica (500) sin detalles internos, y la transacción relacional se revierte. | `templates/error.html` | 🟡 Falta responder 503 ("servicio no disponible") y documentar cada caso. |
+| RNF-07 | **Comportamiento definido si una base no está disponible o una operación se interrumpe.** | Respuesta 503 ("servicio no disponible", con `Retry-After`) que indica qué parte del servicio está afectada, sin detalles internos; detección en 5 s por base. El inicio de sesión de administradores también responde 503 si MongoDB no está disponible, en vez de "credenciales incorrectas". Una operación interrumpida en PostgreSQL se revierte completa. | `DatabaseUnavailableAdvice`, `AdminLoginFailureHandler`, `DatabaseTimeoutsConfig`, `DatabaseUnavailableWebMvcTest`, `AdminSecurityWebMvcTest` | ✅ La descripción de cada caso va en la matriz de fallos (RNF-06). |
 | RNF-08 | **El catálogo admite nuevas características sin afectar los contenidos existentes** y valida los datos obligatorios de cada tipo. | Documento polimórfico con validador `$jsonSchema` por tipo y `schemaVersion`. | `db/mongo/init/01_collections.js` | ✅ |
 | RNF-09 | **Fechas consistentes entre bases.** | Instantes en UTC (`TIMESTAMPTZ` en PostgreSQL, `Date` en MongoDB); la interfaz muestra la hora de Colombia. Vigencia `[inicio, fin)` evaluada con un único reloj (el de la aplicación). | `db/README.md` §1, `Clock` en `SharedConfig` | ✅ |
 
@@ -154,7 +154,7 @@ Los identificadores que cruzan bases (`accountId`, `profileId`, `planIdAtStart`,
 | RNF-11 | **Sesión de cliente segura.** | JWT HS256 en una cookie `HttpOnly` y `SameSite=Lax` (`Secure` con HTTPS), con vencimiento de 60 minutos. CSRF activo en formularios y en htmx. Sin sesión HTTP en el servidor. | `JwtTokenServiceTest`, `AuthCookiesTest`, `CustomerSecurityWebMvcTest` | ✅ |
 | RNF-12 | **Cada usuario solo accede a los perfiles y la actividad de su propia cuenta.** | La cuenta sale siempre del token, nunca de un parámetro. El perfil en uso se verifica en PostgreSQL en cada petición (activo y de la cuenta). Un perfil ajeno responde 404. | `ProfileWebMvcTest`, `ProfileRulesIT`, `ViewingCurrentProfileWebMvcTest` | ✅ |
 | RNF-13 | **Autorización de administrador verificada en el servidor** para cada operación administrativa; administradores independientes de los clientes. | Cadena de seguridad propia en `/admin/**` (rol `ADMIN`), separada de la de clientes. Un token de cliente no abre el panel, y uno de administrador no sirve como cliente. | `AdminSecurityWebMvcTest`, `SecurityChainsCoexistenceWebMvcTest` | ✅ |
-| RNF-14 | **Mínimo privilegio en las bases.** | PostgreSQL: `cine_owner` (DDL), `cine_app` (sin `DELETE`, `UPDATE` por columna), `cine_report` (solo lectura, usado por el informe de ingresos). MongoDB: rol `cineAppRole` por colección; `admin_users` de solo lectura para la aplicación. | `02_grants.sql`, `03_users.js`, `ReportingConnectionIT` | ✅ |
+| RNF-14 | **Mínimo privilegio en las bases.** | PostgreSQL: `cine_owner` (DDL), `cine_app` (sin `DELETE`, `UPDATE` por columna), `cine_report` (solo lectura, usado por el informe de ingresos). MongoDB: rol `cineAppRole` por colección, sin permiso de borrar; `admin_users` de solo lectura para la aplicación; `cineReport` (rol `read`, usado por el informe de consumo). | `02_grants.sql`, `03_users.js`, `ReportingConnectionIT`, `ReportingMongoIT` | ✅ |
 | RNF-15 | **Sin credenciales en el repositorio** fuera de las de desarrollo. | Conexiones y secreto JWT por variables de entorno, con valores por defecto solo para desarrollo. `.env` y `config/` en `.gitignore`. | `application.properties`, `.gitignore` | ✅ |
 
 ### 3.3 Rendimiento
@@ -164,13 +164,13 @@ Los identificadores que cruzan bases (`accountId`, `profileId`, `planIdAtStart`,
 | RNF-16 | **Índices seleccionados y justificados para las consultas principales de ambos motores.** | PostgreSQL: índices de login, perfiles, vigencia, historial e ingresos. MongoDB: índices de búsqueda y filtros del catálogo y de "Continuar viendo". | `docs/02_catalogo_objetos_postgres.md` §4, `db/mongo/init/02_indexes.js` | ✅ |
 | RNF-17 | **Medición antes y después de optimizar una consulta en cada motor** (datos de prueba, plan de ejecución, tiempos). | PostgreSQL: experimentos con `EXPLAIN (ANALYZE, BUFFERS)` y volumen declarado. | `docs/04_indices_y_mediciones.md` §1, `db/demos/postgres/04_index_experiment.sql` | 🟡 Faltan las mediciones de MongoDB (§2 y §3, P3 y P4). |
 | RNF-18 | **Resultados de búsqueda paginados.** | Catálogo de clientes con tamaño de página acotado; lista de administración con 20 por página. | `CatalogSearchService`, `ContentAdminController` | ✅ |
-| RNF-19 | **Datos sintéticos con volumen para las mediciones**, indicando el tamaño. | Scripts deterministas con N configurable que informan el tamaño resultante. | `db/demos/postgres/05_synthetic_accounts.sql`, `06_volume_accounts.sql` | ✅ PostgreSQL · 🟡 el seed de MongoDB depende de P5 |
+| RNF-19 | **Datos sintéticos con volumen para las mediciones**, indicando el tamaño. | Scripts deterministas con N configurable que informan el tamaño resultante. | `db/demos/postgres/05_synthetic_accounts.sql`, `06_volume_accounts.sql`, `07_export_viewers.sql`, `db/demos/mongo/02_synthetic_sessions.js` | ✅ PostgreSQL y MongoDB (las sesiones se generan para las cuentas exportadas de PostgreSQL y el script informa cuántas creó, por plan y tipo) |
 
 ### 3.4 Usabilidad
 
 | RNF | Requerimiento | Cómo se cumple | Evidencia | Estado |
 |---|---|---|---|---|
-| RNF-20 | **Interfaz en español y navegación coherente.** | Layout compartido (cabecera, barra y pie) en cuentas, perfiles, billing, catálogo y errores. | `templates/shared/layout.html` | 🟡 Las pantallas de viewing (`/viewing/*`) aún usan su propia cabecera. |
+| RNF-20 | **Interfaz en español y navegación coherente.** | Layout compartido (cabecera, barra y pie) en cuentas, perfiles, billing, catálogo, reproducción y errores. | `templates/shared/layout.html` | ✅ |
 | RNF-21 | **Interacciones parciales sin recargar la página.** | htmx 2 (servido desde el propio servidor) en la búsqueda y los listados; animaciones CSS que respetan "reducir movimiento". | `catalog/search.html`, `static/js/app.js` | ✅ |
 | RNF-22 | **Mensajes de error claros y sin detalles internos.** | Validaciones por campo; mensajes de reglas de negocio pensados para el usuario; página de error sin trazas. | `SharedLayoutWebMvcTest` | ✅ |
 
@@ -188,8 +188,8 @@ Los identificadores que cruzan bases (`accountId`, `profileId`, `planIdAtStart`,
 
 | Estado | RNF |
 |---|---|
-| ✅ Implementado | 21 |
-| 🟡 Parcial | 5: RNF-06, 07, 17, 19 (MongoDB), 20 |
+| ✅ Implementado | 24 |
+| 🟡 Parcial | 2: RNF-06, 17 |
 | ⏳ Pendiente | 1: RNF-25 |
 
 ---
@@ -198,10 +198,11 @@ Los identificadores que cruzan bases (`accountId`, `profileId`, `planIdAtStart`,
 
 | # | Pendiente | Requerimientos | Resp. |
 |---|---|---|---|
-| 1 | Botones "Agregar a Mi lista" y "Reproducir" en el detalle del catálogo (con el episodio, en las series) | RF-23, RF-26 | P3 + P4 |
+| 1 | ~~Botones "Agregar a Mi lista" y "Reproducir" en el detalle del catálogo (con el episodio, en las series)~~ ✅ | RF-23, RF-26 | P3 + P4 |
 | 2 | ~~Integrar la gestión de planes del administrador, con pantalla~~ ✅ | RF-12.1 a RF-12.4 | P2 |
-| 3 | Documento de integración y matriz de fallos; respuesta 503 si una base no está disponible | RNF-06, RNF-07 | P5 (+ P1 para la página 503) |
+| 3 | Documento de integración y matriz de fallos (la respuesta 503 ya está ✅) | RNF-06 | P5 |
 | 4 | Mediciones de índices en MongoDB (antes y después) | RNF-17 | P3, P4 |
-| 5 | Pantallas de viewing con el layout compartido | RNF-20 | P4 |
+| 5 | ~~Pantallas de viewing con el layout compartido~~ ✅ | RNF-20 | P4 |
 | 6 | Informes de analítica y sus CSV | RF-35 a RF-38, RF-39 | P5 |
 | 7 | GitHub Actions | RNF-25 | P2 |
+| 8 | Fechas de publicación y retiro de los contenidos (`publishedAt`, `retiredAt`): las pide RI-06 y no están en `contents`. Las necesitaría RF-37 | RI-06 | P3 |

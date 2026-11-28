@@ -1,8 +1,6 @@
 package com.cineconecta.platform.viewing.internal.persistence;
 
 import com.cineconecta.platform.catalog.ContentType;
-import com.cineconecta.platform.viewing.ConsumptionApi;
-import com.cineconecta.platform.viewing.ConsumptionRow;
 import com.cineconecta.platform.viewing.internal.service.PlaybackSession;
 import com.mongodb.client.MongoCollection;
 import org.bson.Document;
@@ -10,15 +8,12 @@ import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Repository;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.Date;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static com.mongodb.client.model.Accumulators.sum;
 import static com.mongodb.client.model.Aggregates.*;
 import static com.mongodb.client.model.Sorts.*;
 
@@ -26,7 +21,9 @@ import static com.mongodb.client.model.Filters.*;
 import static com.mongodb.client.model.Updates.*;
 
 @Repository
-public class PlaybackSessionStore implements ConsumptionApi {
+public class PlaybackSessionStore {
+    static final String COLLECTION = "playback_sessions";
+
     private final MongoTemplate mongo;
 
     public PlaybackSessionStore(MongoTemplate mongo) {
@@ -61,30 +58,6 @@ public class PlaybackSessionStore implements ConsumptionApi {
         Document document = collection().find(and(eq("_id", new ObjectId(id)),
                 eq("accountId", accountId), eq("profileId", profileId))).first();
         return Optional.ofNullable(document).map(this::read);
-    }
-
-    @Override
-    public List<ConsumptionRow> byPlanAndType(Instant fromInclusive, Instant toExclusive) {
-        if (!fromInclusive.isBefore(toExclusive)) {
-            throw new IllegalArgumentException("El inicio del período debe ser anterior al fin.");
-        }
-
-        // Agrupar primero por perfil permite contarlo una sola vez por plan y tipo.
-        var planTypeAndProfile = new Document("planId", "$planIdAtStart").append("type", "$contentType")
-                .append("profileId", "$profileId");
-        return collection().aggregate(List.of(
-                match(and(gte("startedAt", toDate(fromInclusive)), lt("startedAt", toDate(toExclusive)))),
-                group(planTypeAndProfile, sum("seconds", "$watchedSeconds")),
-                group(new Document("planId", "$_id.planId").append("type", "$_id.type"),
-                        sum("seconds", "$seconds"), sum("distinctProfiles", 1)),
-                sort(ascending("_id.planId", "_id.type"))
-        )).map(document -> {
-            Document key = document.get("_id", Document.class);
-            long seconds = document.get("seconds", Number.class).longValue();
-            BigDecimal minutes = BigDecimal.valueOf(seconds).divide(BigDecimal.valueOf(60), 2, RoundingMode.HALF_UP);
-            return new ConsumptionRow(key.getInteger("planId"), readType(key.getString("type")),
-                    minutes, document.get("distinctProfiles", Number.class).longValue());
-        }).into(new ArrayList<>());
     }
 
     /**
@@ -164,7 +137,7 @@ public class PlaybackSessionStore implements ConsumptionApi {
     }
 
     private MongoCollection<Document> collection() {
-        return mongo.getCollection("playback_sessions");
+        return mongo.getCollection(COLLECTION);
     }
 
     /** Mismos valores que contents.type y que el validador de playback_sessions: MOVIE, SERIES, DOCUMENTARY. */
@@ -172,7 +145,7 @@ public class PlaybackSessionStore implements ConsumptionApi {
         return type.name();
     }
 
-    private static ContentType readType(String type) {
+    static ContentType readType(String type) {
         try {
             return ContentType.valueOf(type);
         } catch (IllegalArgumentException | NullPointerException error) {

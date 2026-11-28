@@ -1,6 +1,8 @@
 package com.cineconecta.platform.viewing;
 
 import com.cineconecta.platform.catalog.ContentType;
+import com.cineconecta.platform.shared.persistence.ReportingMongo;
+import com.cineconecta.platform.viewing.internal.persistence.ConsumptionQuery;
 import com.cineconecta.platform.viewing.internal.persistence.PlaybackSessionStore;
 import com.cineconecta.platform.viewing.internal.service.PlaybackSession;
 import com.mongodb.client.MongoClients;
@@ -37,7 +39,8 @@ class ConsumptionApiIT {
             insert(store, from.minusSeconds(1), 2, ContentType.MOVIE, 44, 60);
             insert(store, to, 2, ContentType.MOVIE, 44, 60);
 
-            ConsumptionApi api = store;
+            // La consulta del informe va por la conexión de solo lectura (cineReport en la aplicación).
+            ConsumptionApi api = new ConsumptionQuery(new ReportingMongo(client, "viewing_test"));
             assertEquals(List.of(
                     new ConsumptionRow(2, ContentType.MOVIE, new BigDecimal("1.50"), 2),
                     new ConsumptionRow(2, ContentType.SERIES, new BigDecimal("1.00"), 1),
