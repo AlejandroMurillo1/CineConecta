@@ -32,9 +32,9 @@ SUBSCRIPTIONS 1 ── 1 PAYMENTS
 | Columna | Tipo | Nulo | Por defecto | Descripción |
 |---|---|---|---|---|
 | `accountId` | INTEGER | No | identity | Identificador de la cuenta (PK) |
-| `fullName` | VARCHAR(120) | No | | Nombre completo del titular |
+| `fullName` | VARCHAR(150) | No | | Nombre completo del titular |
 | `email` | VARCHAR(254) | No | | Correo de acceso |
-| `passwordHash` | VARCHAR(100) | No | | Hash BCrypt de la contraseña |
+| `passwordHash` | VARCHAR(255) | No | | Hash BCrypt de la contraseña |
 | `createdAt` | TIMESTAMPTZ | No | `now()` | Fecha de registro |
 
 | Restricción / índice | Tipo | Regla |
@@ -48,7 +48,7 @@ SUBSCRIPTIONS 1 ── 1 PAYMENTS
 | Columna | Tipo | Nulo | Por defecto | Descripción |
 |---|---|---|---|---|
 | `planId` | INTEGER | No | identity | Identificador del plan (PK) |
-| `name` | VARCHAR(50) | No | | Nombre del plan |
+| `name` | VARCHAR(60) | No | | Nombre del plan |
 | `price` | NUMERIC(12,2) | No | | Precio en pesos colombianos |
 | `maxProfiles` | INTEGER | No | | Máximo de perfiles activos |
 | `isActive` | CHAR(1) | No | `'Y'` | **Columna nueva.** `'N'` = no se ofrece en nuevas contrataciones |
@@ -69,7 +69,7 @@ SUBSCRIPTIONS 1 ── 1 PAYMENTS
 |---|---|---|---|---|
 | `profileId` | INTEGER | No | identity | Identificador del perfil (PK) |
 | `accountId` | INTEGER | No | | Cuenta a la que pertenece (FK) |
-| `name` | VARCHAR(50) | No | | Nombre del perfil |
+| `name` | VARCHAR(60) | No | | Nombre del perfil |
 | `maxAgeRating` | INTEGER | No | | Clasificación máxima permitida |
 | `isActive` | CHAR(1) | No | `'Y'` | `'N'` = desactivado (conserva su historial) |
 
@@ -114,7 +114,7 @@ La tabla es un historial: la aplicación solo puede insertar, nunca modificar. U
 | `subscriptionId` | INTEGER | No | | Suscripción que respalda (FK) |
 | `paidAt` | TIMESTAMPTZ | No | `now()` | Fecha del pago |
 | `amount` | NUMERIC(12,2) | No | | Monto: copia del precio del plan al pagar |
-| `reference` | VARCHAR(40) | No | | Referencia del pago simulado |
+| `reference` | VARCHAR(100) | No | | Referencia del pago simulado |
 
 | Restricción / índice | Tipo | Regla |
 |---|---|---|

@@ -56,7 +56,7 @@
               th:action="@{/profiles}" th:object="${form}" method="post" novalidate>
             <div class="cc-field" th:classappend="${#fields.hasErrors('name')} ? 'cc-field-error'">
                 <label for="name">Nombre</label>
-                <input class="cc-input" id="name" type="text" th:field="*{name}" maxlength="50" required>
+                <input class="cc-input" id="name" type="text" th:field="*{name}" maxlength="60" required>
                 <span class="cc-error-text" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></span>
             </div>
             <div class="cc-field" th:classappend="${#fields.hasErrors('maxAgeRating')} ? 'cc-field-error'">
