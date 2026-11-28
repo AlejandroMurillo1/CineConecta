@@ -17,6 +17,21 @@ db/
 
 Los datos de prueba (cuentas, perfiles, suscripciones, catálogo y sesiones) los carga el **seed en Java**; estos scripts solo crean la estructura, los usuarios y el administrador inicial.
 
+### Datos de demostración (`db/demos/postgres/`)
+
+Se ejecutan a mano, después de levantar las bases. Todos son idempotentes y las cuentas usan la contraseña `Demo123*`.
+
+| Script | Contenido |
+|---|---|
+| `01_synthetic_billing.sql` | Cuentas con suscripciones vigentes, vencidas y cambio a plan menor |
+| `05_synthetic_accounts.sql` | Casos de cuentas y perfiles: límite del plan alcanzado, clasificaciones 0-18, perfiles inactivos, suscripción vencida, cuenta recién registrada y correo con mayúsculas (tabla de casos al inicio del script) |
+| `06_volume_accounts.sql` | Volumen para mediciones: N cuentas (`-v cuentas=20000` por defecto) con 1 a 5 perfiles; deterministas |
+
+```bash
+docker compose exec -T postgres psql -U cine -d cineconecta -v ON_ERROR_STOP=1 < db/demos/postgres/05_synthetic_accounts.sql
+docker compose exec -T postgres psql -U cine -d cineconecta -v ON_ERROR_STOP=1 -v cuentas=20000 < db/demos/postgres/06_volume_accounts.sql
+```
+
 ---
 
 ## 1. Levantar todo en local
