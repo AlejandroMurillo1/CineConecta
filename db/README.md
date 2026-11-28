@@ -17,30 +17,48 @@ db/
 
 Estos scripts solo crean la estructura, los usuarios y el administrador inicial. Los datos de demostración (cuentas, perfiles, suscripciones, pagos y catálogo) están en `db/demos/` y se cargan aparte; ver el README de la raíz.
 
-### Datos de demostración (`db/demos/postgres/`)
+### Datos de demostración y de volumen (`db/demos/`)
 
-Se ejecutan a mano, después de levantar las bases. Todos son idempotentes y las cuentas usan la contraseña `Demo123*`.
+Se cargan después de levantar las bases (documentación completa: [`docs/05_datos_de_prueba.md`](../docs/05_datos_de_prueba.md)). **Lo más simple es `./db/demos/load_all.sh`** (bash o Git Bash, desde la raíz), que corre todos los scripts en orden e informa el tamaño de cada parte. Todos son idempotentes y deterministas, y las cuentas usan la contraseña `Demo123*`.
+
+| Parte | Tamaño medio (por defecto) | Variable |
+|---|---|---|
+| Cuentas de volumen y perfiles | 20 000 cuentas, ≈ 60 000 perfiles | `CUENTAS` |
+| Suscripciones y pagos | ≈ 95 000 de cada uno (12 meses de historial) | depende de `CUENTAS` |
+| Catálogo | 150 contenidos generados (≈ 875 episodios) + los de demostración | `CONTENIDOS` |
+| Sesiones de reproducción | ≈ 200 000 | `PERFILES_VOLUMEN` (3 400) |
+| Mi lista | ≈ 2 000 listas | `PERFILES_VOLUMEN` |
+
+```bash
+./db/demos/load_all.sh                                                  # tamaño medio (≈ 40 s)
+CUENTAS=100000 CONTENIDOS=500 PERFILES_VOLUMEN=17000 ./db/demos/load_all.sh   # grande
+```
+
+#### PostgreSQL (`db/demos/postgres/`)
 
 | Script | Contenido |
 |---|---|
 | `01_synthetic_billing.sql` | Cuentas con suscripciones vigentes, vencidas y cambio a plan menor |
 | `05_synthetic_accounts.sql` | Casos de cuentas y perfiles: límite del plan alcanzado, clasificaciones 0-18, perfiles inactivos, suscripción vencida, cuenta recién registrada y correo con mayúsculas (tabla de casos al inicio del script) |
 | `06_volume_accounts.sql` | Volumen para mediciones: N cuentas (`-v cuentas=20000` por defecto) con 1 a 5 perfiles; deterministas |
-| `07_export_viewers.sql` | Solo lectura: exporta perfiles activos y su historial de suscripciones para `mongo/02_synthetic_sessions.js` |
+| `07_export_viewers.sql` | Solo lectura: exporta perfiles activos y su historial de suscripciones para `mongo/02` y `mongo/04`: los de demostración y una muestra de los de volumen (`-v perfiles_volumen=3400` por defecto) |
+| `08_volume_subscriptions.sql` | Volumen: historial de suscripciones de 30 días con su pago para las cuentas de `06` (renovaciones, pausas, subidas de plan, vigentes y vencidas), sin superposiciones y sin planes con menos perfiles que los activos |
 
-### Datos de demostración (`db/demos/mongo/`)
+#### MongoDB (`db/demos/mongo/`)
 
 | Script | Contenido |
 |---|---|
 | `01_demo_catalog.js` | 5 contenidos con IDs fijos (película, serie, documental y un borrador) |
-| `02_synthetic_sessions.js` | Sesiones de reproducción cerradas dentro de la vigencia de cada suscripción, con `planIdAtStart` del plan de ese momento y solo contenidos aptos para la clasificación del perfil. Marcadas con `synthetic: true`; al repetirlo reemplaza solo esas |
+| `02_synthetic_sessions.js` | Sesiones de reproducción cerradas dentro de la vigencia de cada suscripción, con `planIdAtStart` del plan de ese momento y solo contenidos aptos para la clasificación del perfil. Unos títulos son mucho más vistos que otros (popularidad). Marcadas con `synthetic: true`; al repetirlo reemplaza solo esas |
+| `03_volume_catalog.js` | Volumen del catálogo: N contenidos (`CONTENIDOS=150` por defecto) con IDs, títulos y episodios fijos; películas, series y documentales; publicados, borradores y retirados; afiche por género |
+| `04_synthetic_my_lists.js` | "Mi lista" para ≈ 60 % de los perfiles exportados, solo con contenidos publicados y permitidos; no toca las listas armadas desde la aplicación |
 
 ```bash
 docker compose exec -T postgres psql -U cine -d cineconecta -v ON_ERROR_STOP=1 < db/demos/postgres/05_synthetic_accounts.sql
 docker compose exec -T postgres psql -U cine -d cineconecta -v ON_ERROR_STOP=1 -v cuentas=20000 < db/demos/postgres/06_volume_accounts.sql
 ```
 
-Las sesiones sintéticas necesitan las dos bases a la vez: la salida de `07_export_viewers.sql` (una línea `const VIEWERS = [...]`) se concatena con el script de MongoDB:
+Para correr un script suelto: las sesiones y las listas necesitan las dos bases a la vez; la salida de `07_export_viewers.sql` (una línea `const VIEWERS = [...]`) se concatena con el script de MongoDB (igual con `04_synthetic_my_lists.js`):
 
 ```bash
 { docker compose exec -T postgres psql -U cine -d cineconecta -qAt -v ON_ERROR_STOP=1 < db/demos/postgres/07_export_viewers.sql

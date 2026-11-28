@@ -216,7 +216,7 @@ Un documento por película, serie o documental, con la forma que escribe el mód
 | `ix_contents_status_genres_age` | `status, genres, ageRating` | Filtro por género |
 | `ix_contents_status_audio_age` | `status, audioLanguages, ageRating` | Filtro por idioma de audio |
 | `ux_contents_title_year` | `titleNormalized, year` (único) | Impide registrar dos veces el mismo título en el mismo año |
-| `ux_contents_episode_id` | `contentDetails.seasons.episodes.episodeId` (único, parcial) | Resolver un episodio; impide repetir su ID entre series |
+| `ix_contents_episode_id` | `contentDetails.seasons.episodes.episodeId` (parcial) | Resolver un episodio. No es único: una temporada vacía aporta una clave null al índice multikey, y dos series en borrador así chocarían. El ID no se repite porque es un UUID que genera la aplicación |
 
 Los índices de género e idioma van separados porque MongoDB no permite dos arreglos en un mismo índice compuesto. La búsqueda por título es un "contiene" (expresión regular sobre `titleNormalized`), que no puede aprovechar un índice por rangos: se resuelve combinada con los demás filtros, que sí usan índice.
 

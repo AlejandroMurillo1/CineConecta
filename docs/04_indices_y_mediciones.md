@@ -67,10 +67,10 @@ ORDER BY pl.planid;
 
 ## 2. MongoDB — Catálogo (Persona 3)
 
-*(Pendiente de completar por Persona 3 con `explain("executionStats")` sobre `contents`).*
+*(Pendiente de completar por Persona 3 con `explain("executionStats")` sobre `contents`. Datos, consultas y formato: `docs/05_datos_de_prueba.md` §9.3).*
 
 ---
 
 ## 3. MongoDB — Pipeline de consumo (Persona 4)
 
-*(Pendiente de completar por Persona 4 con el pipeline de agregación sobre `playback_sessions`).*
+*(Pendiente de completar por Persona 4 con el pipeline de agregación sobre `playback_sessions`. Datos, consultas y formato: `docs/05_datos_de_prueba.md` §9.4).*

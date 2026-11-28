@@ -26,50 +26,39 @@ src/main/java/com/cineconecta/platform/
 db/
   postgres/          scripts de creación (se ejecutan al crear el contenedor)
   mongo/init/        colecciones, validadores, índices, usuarios y admin inicial
-  demos/postgres/    datos de demostración y demos de concurrencia, rollback e índices
-  demos/mongo/       catálogo de demostración
+  demos/load_all.sh  carga todos los datos de prueba en orden
+  demos/postgres/    datos de demostración y de volumen; demos de concurrencia, rollback e índices
+  demos/mongo/       catálogo, sesiones y Mi lista de demostración y de volumen
 docs/
+  00_requisitos_RF_RNF.md       requerimientos y su estado
+  02_catalogo_objetos_postgres.md  objetos de PostgreSQL
+  03_integracion_y_fallos.md    integración entre las bases y matriz de fallos
+  04_indices_y_mediciones.md    experimentos de índices
+  05_datos_de_prueba.md         seed: qué genera, reglas, tamaño y cómo cargarlo
   data-model.md                 diccionario de datos de ambas bases
-  04_indices_y_mediciones.md    experimento de índices en PostgreSQL
+  guia_pgadmin_compass.md       ver las bases con pgAdmin y MongoDB Compass
 ```
 
 El detalle de los scripts, las reglas que garantiza cada base y el despliegue en la nube está en [`db/README.md`](db/README.md).
 
 ## Cómo ejecutarlo en local
 
-**1. Bases de datos**
+### Requisitos
 
-```bash
-docker compose up -d
-```
+- **JDK 25.** No hace falta instalar Maven: se usa `./mvnw` (en Windows, `mvnw.cmd`).
+- **Docker Desktop**, que debe estar abierto, para las dos bases.
+- **bash.** En Windows, Git Bash, para el script que carga los datos de prueba. PowerShell no sirve para ese script.
 
-La primera vez, cada contenedor ejecuta sus scripts de `db/`. Esos scripts **solo corren con los volúmenes vacíos**: si cambia algo en `db/`, reinicie con `docker compose down -v && docker compose up -d` (borra los datos de ambas bases).
+### Paso a paso (con todos los datos)
 
-Por defecto PostgreSQL queda en `localhost:5432` y MongoDB en `localhost:27017`. Si esos puertos están ocupados (por ejemplo, por un PostgreSQL o MongoDB instalado en Windows), cree un `.env` en la raíz:
+**1. Puertos (solo si 5432 o 27017 ya están ocupados).** Por ejemplo, por un PostgreSQL o MongoDB instalado en Windows. En ese caso, crea un `.env` en la raíz:
 
 ```
 POSTGRES_PORT=5434
 MONGO_PORT=27018
 ```
 
-**2. Datos de demostración**
-
-```bash
-docker compose exec -T postgres psql -U cine -d cineconecta -v ON_ERROR_STOP=1 < db/demos/postgres/01_synthetic_billing.sql
-docker compose exec -T mongo mongosh -u cineOwner -p cine_owner_dev --authenticationDatabase cineconecta cineconecta < db/demos/mongo/01_demo_catalog.js
-```
-
-Sesiones de reproducción históricas bajo distintos planes (para el informe de consumo, "Continuar viendo" y las marcas de visto). Van después de los dos anteriores, porque toman los perfiles y suscripciones de PostgreSQL y el catálogo publicado de MongoDB:
-
-```bash
-{ docker compose exec -T postgres psql -U cine -d cineconecta -qAt -v ON_ERROR_STOP=1 < db/demos/postgres/07_export_viewers.sql
-  cat db/demos/mongo/02_synthetic_sessions.js
-} | docker compose exec -T mongo mongosh --quiet -u cineOwner -p cine_owner_dev --authenticationDatabase cineconecta cineconecta
-```
-
-**3. Aplicación**
-
-Si cambió los puertos, cree `config/application.properties` (está en `.gitignore`) con las conexiones de su máquina:
+Y un `config/application.properties` (está en `.gitignore`) con las mismas conexiones:
 
 ```properties
 spring.datasource.url=jdbc:postgresql://localhost:5434/cineconecta?currentSchema=cineconecta
@@ -78,33 +67,67 @@ spring.datasource.password=cine_app_dev
 spring.mongodb.uri=mongodb://cineApp:cine_app_dev@localhost:27018/cineconecta?authSource=cineconecta
 ```
 
-Luego arranque la aplicación:
+> No definas `POSTGRES_PASSWORD` en el `.env`: el compose la usa para el superusuario `cine`, y la aplicación la tomaría como contraseña de `cine_app`.
+
+**2. Bases de datos, empezando de cero**
+
+```bash
+docker compose down -v      # borra los datos anteriores de las dos bases (omítelo la primera vez)
+docker compose up -d
+```
+
+Al crearse, cada contenedor ejecuta los scripts de `db/` (esquema, usuarios, validadores, índices, planes y administrador). **Esos scripts solo corren con los volúmenes vacíos**: si alguien cambia algo en `db/`, repite este paso.
+
+**3. Datos de prueba** (bash o Git Bash, desde la raíz)
+
+```bash
+./db/demos/load_all.sh
+```
+
+Carga, en orden:
+- las cuentas de demostración;
+- 20 000 cuentas de volumen con su historial de suscripciones y pagos;
+- un catálogo de 150 contenidos generados;
+- ≈ 200 000 sesiones de reproducción y "Mi lista".
+
+Tarda menos de un minuto y se puede repetir. El tamaño se cambia con variables, y el detalle está en [`docs/05_datos_de_prueba.md`](docs/05_datos_de_prueba.md).
+
+**4. Aplicación**
 
 ```bash
 ./mvnw spring-boot:run      # Windows: mvnw.cmd spring-boot:run
 ```
 
-La aplicación queda en http://localhost:8080 y el panel de administración en http://localhost:8080/admin.
+Abre http://localhost:8080 para los clientes y http://localhost:8080/admin para la administración. Las credenciales están más abajo.
 
 | Pantalla | Ruta |
 |---|---|
 | Registro e inicio de sesión de clientes | `/register`, `/login` |
+| Inicio, con "Continuar viendo" y novedades del catálogo | `/` |
 | Perfiles (crear, editar, elegir) | `/profiles` |
-| Catálogo (filtrado por la clasificación del perfil en uso) | `/catalog` |
+| Catálogo (filtrado por la clasificación del perfil en uso) y detalle, con Reproducir y Mi lista | `/catalog`, `/catalog/{id}` |
 | Planes, contratación e historial | `/billing/plans`, `/billing/history` |
-| Reproductor, continuar viendo y Mi lista | `/viewing/player`, `/viewing/continue-watching`, `/viewing/my-list` |
-| Administración: catálogo | `/admin/contents` |
+| Reproductor, continuar viendo y Mi lista | `/viewing/player/...`, `/viewing/continue-watching`, `/viewing/my-list` |
+| Administración: catálogo y planes | `/admin/contents`, `/admin/plans` |
 | Administración: informes de ingresos y de consumo por plan | `/admin/reports/revenue`, `/admin/reports/consumption` |
 
-> No defina `POSTGRES_PASSWORD` en el `.env`: el compose la usa para el superusuario `cine`, y la aplicación la tomaría como contraseña de `cine_app`.
+### Problemas frecuentes
 
-**Pruebas**
+| Síntoma | Causa y solución |
+|---|---|
+| La aplicación no arranca y menciona `url` o `dialect` | No encuentra PostgreSQL. Revisa que Docker esté abierto y que los puertos de `config/application.properties` coincidan con el `.env`. |
+| Página 503, "Servicio no disponible" | Una de las bases está detenida. Revisa con `docker compose ps` y levántala con `docker compose up -d`. |
+| `load_all.sh` falla con un error de validación de MongoDB | Las bases se crearon con scripts viejos de `db/`. Repite el paso 2 (`down -v` y `up -d`). |
+| Las suscripciones de prueba aparecen vencidas | Las fechas se calculan al cargar los datos. Repite los pasos 2 y 3. |
+
+### Pruebas
 
 ```bash
-./mvnw test
+./mvnw test      # unitarias y de controladores
+./mvnw verify    # además, las de integración (*IT), con PostgreSQL y MongoDB reales en Testcontainers
 ```
 
-Las pruebas `*IT` usan Testcontainers y necesitan Docker en ejecución.
+`verify` necesita Docker abierto.
 
 ## Ver las bases con pgAdmin y Compass
 
@@ -150,3 +173,5 @@ Todas estas contraseñas son de desarrollo. En la nube se cambian (ver `db/READM
 | `carlos.vencida@cineconecta.local` | Solo suscripciones vencidas | Carlos (18) |
 | `lucia.downgrade@cineconecta.local` | Premium vencido, con más perfiles activos de los que permite un plan menor | Lucía (18), Invitado 1 (13), Invitado 2 (13); Antiguo inactivo |
 | `mateo.sinplan@cineconecta.local` | Nunca ha tenido plan | Mateo (18) |
+
+**Cuentas de volumen**, creadas por `db/demos/load_all.sh`: `vol.000001@volumen.cineconecta.local` a `vol.020000@…`, también con `Demo123*`. Por ejemplo, `vol.000023@volumen.cineconecta.local` tiene Premium vigente, varios meses de historial, sesiones y 5 perfiles. Más casos (límite de perfiles, correo con mayúsculas, cuenta recién creada) en `db/demos/postgres/05_synthetic_accounts.sql`.
