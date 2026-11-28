@@ -23,13 +23,22 @@ cine.contents.createIndex({ status: 1, audioLanguages: 1, ageRating: 1 }, { name
 // También sirve a la búsqueda por título, que es un "contiene" sobre titleNormalized.
 cine.contents.createIndex({ titleNormalized: 1, year: 1 }, { name: 'ux_contents_title_year', unique: true });
 
-// Resolver un episodio por su identificador y garantizar que no se repita entre series.
+// Resolver un episodio por su identificador (reproducción, "Continuar viendo").
 // Parcial: solo documentos que ya tienen episodios.
+//
+// NO es único a propósito. En un índice multikey, una temporada con `episodes: []` aporta
+// una clave null; si dos series en borrador tienen una temporada vacía y otra con episodios,
+// las dos generan esa clave null y el índice único rechaza la segunda (E11000), aunque no
+// haya ningún episodeId repetido. La aplicación lo mostraba como "título repetido".
+// La unicidad del episodeId la garantiza su origen: un UUID generado por la aplicación
+// (UUID.randomUUID) que nunca se reutiliza (RI-07).
+if (cine.contents.getIndexes().some((index) => index.name === 'ux_contents_episode_id')) {
+  cine.contents.dropIndex('ux_contents_episode_id');   // versión anterior (única) de este índice
+}
 cine.contents.createIndex(
   { 'contentDetails.seasons.episodes.episodeId': 1 },
   {
-    name: 'ux_contents_episode_id',
-    unique: true,
+    name: 'ix_contents_episode_id',
     partialFilterExpression: { 'contentDetails.seasons.episodes.episodeId': { $exists: true } },
   },
 );

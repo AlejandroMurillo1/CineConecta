@@ -190,7 +190,7 @@ Los datos pasan por las mismas restricciones que la aplicación. Si un script in
 | Ningún plan con menos perfiles que los activos (RI-04) | Lógica de `08` |
 | Ninguna suscripción antes del registro de la cuenta | Lógica de `08` (y corrección de las cuentas demo en `01`) |
 | Documentos válidos por tipo y estado | Validador `$jsonSchema` de cada colección |
-| Título + año únicos; `episodeId` único | Índices únicos de `contents` |
+| Título + año únicos; `episodeId` sin repetir | Índice único `ux_contents_title_year`; los `episodeId` se generan deterministas y distintos por contenido, temporada y episodio |
 | Sesión dentro de una suscripción, con su plan, sobre contenido publicado y permitido | Lógica de `02`, con los datos exportados por `07` |
 | Lista sin repetidos, con contenido publicado y permitido | Validador (`uniqueItems`) y lógica de `04` |
 
