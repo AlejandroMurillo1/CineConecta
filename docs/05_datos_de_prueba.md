@@ -240,14 +240,149 @@ db.my_lists.countDocuments({ synthetic: true })                  // ≈ 2 000
 
 ---
 
-## 9. Mediciones de índices
+## 9. Guía de medición de índices en MongoDB (RNF-17)
 
-Con este volumen se pueden hacer las mediciones antes y después de MongoDB que pide RNF-17 (`docs/04_indices_y_mediciones.md`, secciones 2 y 3).
+El enunciado pide medir una consulta antes y después de optimizarla en cada motor, con el plan de ejecución, los tiempos y el tamaño de los datos. La parte de PostgreSQL ya está en `docs/04_indices_y_mediciones.md` §1. Esta guía es para las secciones de MongoDB:
 
-- **`contents`:** búsqueda por estado, tipo, género, idioma y clasificación (`explain("executionStats")`).
-- **`playback_sessions`:** "Continuar viendo" por perfil y la agregación del informe de consumo por fecha de inicio.
+- §2 del mismo documento: `contents`, a cargo de P3.
+- §3: `playback_sessions`, a cargo de P4.
 
-Para que el efecto de un índice se note más, se puede cargar el tamaño grande.
+### 9.1 Preparar los datos
+
+Con 150 contenidos MongoDB recorre toda la colección en menos de un milisegundo, haya índice o no. Para la medición conviene cargar un catálogo grande:
+
+```bash
+docker compose down -v && docker compose up -d
+CONTENIDOS=20000 PERFILES_VOLUMEN=17000 ./db/demos/load_all.sh
+```
+
+| Parámetro | Resultado aproximado |
+|---|---|
+| `CONTENIDOS=20000` | 20 000 contenidos (≈ 17 000 publicados, ≈ 6 000 series con ≈ 98 000 episodios) |
+| `PERFILES_VOLUMEN=17000` | ≈ 1 000 000 de sesiones de reproducción |
+
+Anota en el informe el tamaño exacto que imprime `load_all.sh`, porque el enunciado pide indicarlo. Para ver el tamaño en disco, usa `db.contents.stats().size` y `db.playback_sessions.stats().size`.
+
+> **Después de medir, vuelve a cargar el tamaño normal** para la demo: `docker compose down -v`, `docker compose up -d` y `./db/demos/load_all.sh`. Si no, el catálogo de la presentación tendrá 20 000 títulos genéricos.
+
+### 9.2 Ayudante para `mongosh`
+
+Conéctate como `cineOwner`, porque ocultar índices requiere ese permiso:
+
+```bash
+docker compose exec mongo mongosh -u cineOwner -p cine_owner_dev --authenticationDatabase cineconecta cineconecta
+```
+
+Pega esta función. Imprime en una línea lo que hay que copiar al informe: el plan, los documentos y claves revisados, los resultados y el tiempo.
+
+```js
+function medir(nombre, consulta) {
+  const e = consulta().explain('executionStats');
+  const s = e.executionStats;
+  const etapas = [];
+  (function recorrer(st) {
+    if (!st) return;
+    etapas.push(st.stage + (st.indexName ? `(${st.indexName})` : ''));
+    recorrer(st.inputStage);
+    (st.inputStages || []).forEach(recorrer);
+  })(e.queryPlanner.winningPlan.queryPlan || e.queryPlanner.winningPlan);
+  print(`${nombre}: ${etapas.join(' ← ')} | docs revisados ${s.totalDocsExamined} · claves ${s.totalKeysExamined} · devueltos ${s.nReturned} | ${s.executionTimeMillis} ms`);
+}
+```
+
+Para el "antes", **oculta el índice** en lugar de borrarlo. Así no hay que reconstruirlo después:
+
+```js
+db.contents.hideIndex('ix_contents_status_genres_age')     // antes: sin el índice
+db.contents.unhideIndex('ix_contents_status_genres_age')   // después: con el índice
+```
+
+Corre cada medición 3 veces y anota la mediana, porque la primera vez puede estar más lenta mientras MongoDB carga los datos en memoria.
+
+### 9.3 `contents` (P3)
+
+Son las consultas que hace la búsqueda del cliente (`ContentSearchRepository.searchPublished`): solo contenido publicado, con clasificación menor o igual a la del perfil, más los filtros elegidos. Se ordena por año descendente y se pagina.
+
+```js
+const buscar = (filtro) => () => db.contents
+  .find({ status: 'PUBLISHED', ageRating: { $lte: 12 }, ...filtro },
+        { title: 1, type: 1, year: 1, ageRating: 1, posterUrl: 1, genres: 1 })
+  .sort({ year: -1, _id: 1 }).limit(20);                       // primera página (20 por página)
+
+// Q3: catálogo filtrado por género (índice ix_contents_status_genres_age)
+db.contents.hideIndex('ix_contents_status_genres_age')
+medir('Q3 género, sin índice', buscar({ genres: 'Drama' }))
+db.contents.unhideIndex('ix_contents_status_genres_age')
+medir('Q3 género, con índice', buscar({ genres: 'Drama' }))
+
+// Q4: catálogo filtrado por tipo (índice ix_contents_status_type_age)
+db.contents.hideIndex('ix_contents_status_type_age')
+medir('Q4 tipo, sin índice', buscar({ type: 'SERIES' }))
+db.contents.unhideIndex('ix_contents_status_type_age')
+medir('Q4 tipo, con índice', buscar({ type: 'SERIES' }))
+```
+
+Con el mismo patrón se puede medir el filtro por idioma de audio (`audioLanguages: 'en'`, índice `ix_contents_status_audio_age`).
+
+Qué observar:
+- **Sin el índice**, el plan debe mostrar `COLLSCAN` y revisar los 20 000 documentos.
+- **Con el índice**, el plan debe mostrar `IXSCAN` y los documentos revisados deben acercarse a los que cumplen el filtro.
+- **Si aparece una etapa `SORT` en memoria:** el orden por año no está en el índice, y es un hallazgo que vale la pena comentar en el informe. Probar un índice que también incluya `year` sería una optimización posible.
+
+### 9.4 `playback_sessions` (P4)
+
+Primero elige un perfil con muchas sesiones:
+
+```js
+const p = db.playback_sessions.aggregate([
+  { $group: { _id: { profileId: '$profileId', accountId: '$accountId' }, n: { $sum: 1 } } },
+  { $sort: { n: -1 } }, { $limit: 1 }]).toArray()[0]._id;
+```
+
+```js
+// Q5: "Continuar viendo" y marcas de visto: sesiones de un perfil, de la más reciente a la más antigua
+// (PlaybackSessionStore.latestPerTitle). Índice ix_sessions_profile_started.
+const continuar = () => db.playback_sessions.find({ profileId: p.profileId, accountId: p.accountId }).sort({ startedAt: -1 });
+db.playback_sessions.hideIndex('ix_sessions_profile_started')
+medir('Q5 continuar viendo, sin índice', continuar)
+db.playback_sessions.unhideIndex('ix_sessions_profile_started')
+medir('Q5 continuar viendo, con índice', continuar)
+
+// Q6: informe de consumo de un mes (ConsumptionQuery). El índice actúa en el $match por fecha de
+// inicio, que es la etapa que lee la colección; se mide esa etapa con find. Índice ix_sessions_started.
+const mes = () => db.playback_sessions.find({ startedAt: { $gte: ISODate('2026-10-01T05:00:00Z'), $lt: ISODate('2026-11-01T05:00:00Z') } });
+db.playback_sessions.hideIndex('ix_sessions_started')
+medir('Q6 consumo de un mes, sin índice', mes)
+db.playback_sessions.unhideIndex('ix_sessions_started')
+medir('Q6 consumo de un mes, con índice', mes)
+```
+
+Para el informe se puede complementar con la agregación completa:
+
+```js
+db.playback_sessions.explain('executionStats').aggregate([
+  { $match: { startedAt: { $gte: ISODate('2026-10-01T05:00:00Z'), $lt: ISODate('2026-11-01T05:00:00Z') } } },
+  { $group: { _id: { planId: '$planIdAtStart', type: '$contentType', profileId: '$profileId' }, seconds: { $sum: '$watchedSeconds' } } },
+  { $group: { _id: { planId: '$_id.planId', type: '$_id.type' }, seconds: { $sum: '$seconds' }, distinctProfiles: { $sum: 1 } } }])
+```
+
+Qué observar:
+- **Q5 sin el índice:** `COLLSCAN` sobre ≈ 1 000 000 de sesiones, más un `SORT` en memoria.
+- **Q5 con el índice:** `IXSCAN` sin `SORT`, porque el índice ya entrega las sesiones en orden (regla ESR: primero la igualdad, después el orden). Es la diferencia más clara de toda la medición.
+- **Q6:** la diferencia depende de qué fracción del total cae en el mes. Si es grande, MongoDB puede preferir el `COLLSCAN`, y eso también es un resultado válido que hay que explicar. Prueba también con un rango de una semana.
+
+### 9.5 Qué llevar al informe
+
+Por cada consulta, en `docs/04_indices_y_mediciones.md` §2 o §3:
+
+| Consulta | Índice | Plan sin índice | Plan con índice | Docs revisados (sin → con) | Tiempo (sin → con, mediana) |
+|---|---|---|---|---|---|
+| Q3 género | `ix_contents_status_genres_age` | `COLLSCAN` … | `IXSCAN` … | 20 005 → … | … ms → … ms |
+
+Además:
+- el tamaño de los datos: número de documentos y tamaño en disco;
+- la versión de MongoDB, con `db.version()`;
+- una o dos frases que expliquen el resultado, sobre todo si el índice no mejora algo o si aparece un `SORT`.
 
 ---
 
