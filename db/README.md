@@ -94,7 +94,7 @@ Las tablas, columnas, relaciones e índices únicos del modelo (`ux_accounts_ema
 | Estados `'Y'/'N'`, clasificación 0–18, precio > 0 | `CHECK` |
 | Nada se borra; el historial no se modifica | `cine_app` no tiene DELETE en ninguna tabla, y solo INSERT en `subscriptions` y `payments` |
 | El precio y el máximo de perfiles de un plan no cambian | `cine_app` solo puede actualizar `name` e `isActive` de `plans` |
-| Suscripción vigente | Vista `v_current_subscription` |
+| Suscripción vigente | Calculada con `startsAt <= instante < endsAt` (no se almacena). La aplicación la evalúa desde JPA con su propio reloj; la vista `v_current_subscription` muestra la vigente en este momento para consultas manuales y la demostración |
 
 **MongoDB**
 

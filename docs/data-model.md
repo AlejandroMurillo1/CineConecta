@@ -131,7 +131,7 @@ La tabla es un historial: la aplicación solo puede insertar, nunca modificar. U
 
 | Objeto | Tipo | Propósito |
 |---|---|---|
-| `v_current_subscription` | VIEW | Suscripción vigente de cada cuenta, con el nombre y el máximo de perfiles del plan. La usa la verificación V1 |
+| `v_current_subscription` | VIEW | Suscripción vigente de cada cuenta en este momento, con el nombre y el máximo de perfiles del plan. Auxiliar: para consultas manuales, informes y la demostración; la aplicación aplica la misma condición desde JPA (ver la sección 3) |
 | `fn_subscription_requires_payment()` | FUNCTION (PL/pgSQL) | La ejecuta el trigger diferido |
 | `btree_gist` | EXTENSION | Permite combinar `=` y `&&` en la restricción EXCLUDE |
 
@@ -394,10 +394,10 @@ Como `cineApp` solo puede leer `admin_users`, la aplicación no puede crear admi
 |---|---|---|---|
 | `accountId` | `accounts` | `playback_sessions` | Se toma del usuario autenticado |
 | `profileId` | `profiles` | `_id` de `my_lists`, `playback_sessions` | Verificación V1 en PostgreSQL antes de escribir: el perfil existe, está activo y pertenece a la cuenta |
-| `planIdAtStart` | `subscriptions` (vía `v_current_subscription`) | `playback_sessions` | Se lee de la suscripción vigente al iniciar la sesión |
+| `planIdAtStart` | `subscriptions` | `playback_sessions` | Se lee de la suscripción vigente en el instante de inicio de la sesión (`SubscriptionApi.planAt`, que consulta `subscriptions` con JPA) |
 | `contentId` | `contents` | `my_lists`, `playback_sessions` | La aplicación lo resuelve contra `contents`; nunca se borra ni se reutiliza |
 | `episodeId` | `contents.contentDetails.seasons.episodes` | `playback_sessions` | La aplicación lo resuelve contra `contents` |
 
 **Verificación V1** (antes de buscar, agregar a "Mi lista" o iniciar una reproducción):
-1. En PostgreSQL: el perfil está activo y pertenece a la cuenta autenticada, y la cuenta tiene una suscripción vigente (`v_current_subscription`).
+1. En PostgreSQL: el perfil está activo y pertenece a la cuenta autenticada, y la cuenta tiene una suscripción vigente (`SubscriptionApi.current`, que aplica `startsAt <= ahora < endsAt` sobre `subscriptions` con el reloj de la aplicación).
 2. En MongoDB: el contenido está publicado (`PUBLISHED`) y su `ageRating` es menor o igual al `maxAgeRating` del perfil.

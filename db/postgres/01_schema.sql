@@ -139,8 +139,13 @@ CREATE CONSTRAINT TRIGGER tg_subscription_requires_payment
     EXECUTE FUNCTION fn_subscription_requires_payment();
 
 -- -----------------------------------------------------------------------------
--- Vista: suscripción vigente de cada cuenta (como mucho una, por la EXCLUDE).
--- La usa la verificación V1 (perfil activo + suscripción vigente).
+-- Vista: suscripción vigente de cada cuenta en este momento (como mucho una, por
+-- la EXCLUDE). Es auxiliar: sirve para consultas manuales, informes con
+-- cine_report y la demostración en la sustentación.
+-- La aplicación NO la consulta: aplica la misma condición [inicio, fin) desde JPA
+-- (SubscriptionRepository.findActiveAt) porque necesita evaluar la vigencia en un
+-- instante dado (p. ej. "plan vigente al iniciar cada sesión") y con un solo reloj,
+-- el Clock de la aplicación, en lugar de now() de la base.
 -- -----------------------------------------------------------------------------
 CREATE VIEW v_current_subscription AS
 SELECT s.subscriptionId,
