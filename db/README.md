@@ -19,7 +19,7 @@ Estos scripts solo crean la estructura, los usuarios y el administrador inicial.
 
 ### Datos de demostración y de volumen (`db/demos/`)
 
-Se cargan después de levantar las bases. **Lo más simple es `./db/demos/load_all.sh`** (bash o Git Bash, desde la raíz), que corre todos los scripts en orden e informa el tamaño de cada parte. Todos son idempotentes y deterministas, y las cuentas usan la contraseña `Demo123*`.
+Se cargan después de levantar las bases (documentación completa: [`docs/05_datos_de_prueba.md`](../docs/05_datos_de_prueba.md)). **Lo más simple es `./db/demos/load_all.sh`** (bash o Git Bash, desde la raíz), que corre todos los scripts en orden e informa el tamaño de cada parte. Todos son idempotentes y deterministas, y las cuentas usan la contraseña `Demo123*`.
 
 | Parte | Tamaño medio (por defecto) | Variable |
 |---|---|---|
