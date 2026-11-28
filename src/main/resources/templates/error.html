@@ -30,7 +30,20 @@
             </th:block>
             <th:block th:case="503">
                 <h1>Servicio no disponible</h1>
-                <p class="cc-muted">Una de nuestras bases de datos no responde en este momento. Intenta en unos minutos.</p>
+                <th:block th:switch="${unavailableDatabase}">
+                    <p class="cc-muted" th:case="'POSTGRES'">
+                        En este momento no podemos acceder a las cuentas, los perfiles ni las suscripciones.
+                        No se registró ningún cambio a medias: puedes intentar de nuevo en unos minutos.
+                    </p>
+                    <p class="cc-muted" th:case="'MONGO'">
+                        En este momento no podemos acceder al catálogo ni a tu actividad (Mi lista y
+                        reproducciones). Tu cuenta y tu suscripción no se ven afectadas. Intenta de nuevo en
+                        unos minutos.
+                    </p>
+                    <p class="cc-muted" th:case="*">
+                        Una de nuestras bases de datos no responde en este momento. Intenta en unos minutos.
+                    </p>
+                </th:block>
             </th:block>
             <th:block th:case="*">
                 <h1>Algo salió mal</h1>
