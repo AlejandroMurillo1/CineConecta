@@ -20,6 +20,11 @@
 # =============================================================================
 set -euo pipefail
 
+# Git Bash (Windows) convierte los argumentos que parecen rutas Unix (/tmp/...) en rutas de
+# Windows antes de pasárselos a docker; dentro del contenedor esas rutas no existen.
+export MSYS_NO_PATHCONV=1
+export MSYS2_ARG_CONV_EXCL='*'
+
 CUENTAS="${CUENTAS:-20000}"
 CONTENIDOS="${CONTENIDOS:-150}"
 PERFILES_VOLUMEN="${PERFILES_VOLUMEN:-3400}"
