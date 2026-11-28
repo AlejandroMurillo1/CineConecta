@@ -116,6 +116,14 @@ const seriesDetails = (minSeasons, minEpisodes) => ({
   },
 });
 
+// El alias permite a Spring Data reconstruir la implementación concreta de
+// ContentDetails al leer el subdocumento polimórfico.
+const typedDetails = (alias, schema) => ({
+  ...schema,
+  required: ['_class', ...schema.required],
+  properties: { _class: { enum: [alias] }, ...schema.properties },
+});
+
 const contentsSchema = {
   bsonType: 'object',
   title: 'Contenido del catálogo',
@@ -144,10 +152,10 @@ const contentsSchema = {
   },
   // Los datos de contentDetails dependen del tipo (y, en series, del estado).
   anyOf: [
-    { properties: { type: { enum: ['MOVIE'] }, contentDetails: movieDetails } },
-    { properties: { type: { enum: ['DOCUMENTARY'] }, contentDetails: documentaryDetails } },
-    { properties: { type: { enum: ['SERIES'] }, status: { enum: ['DRAFT'] }, contentDetails: seriesDetails(0, 0) } },
-    { properties: { type: { enum: ['SERIES'] }, status: { enum: ['PUBLISHED', 'RETIRED'] }, contentDetails: seriesDetails(1, 1) } },
+    { properties: { type: { enum: ['MOVIE'] }, contentDetails: typedDetails('MOVIE', movieDetails) } },
+    { properties: { type: { enum: ['DOCUMENTARY'] }, contentDetails: typedDetails('DOCUMENTARY', documentaryDetails) } },
+    { properties: { type: { enum: ['SERIES'] }, status: { enum: ['DRAFT'] }, contentDetails: typedDetails('SERIES', seriesDetails(0, 0)) } },
+    { properties: { type: { enum: ['SERIES'] }, status: { enum: ['PUBLISHED', 'RETIRED'] }, contentDetails: typedDetails('SERIES', seriesDetails(1, 1)) } },
   ],
 };
 

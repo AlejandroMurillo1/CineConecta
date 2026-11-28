@@ -36,8 +36,8 @@
     <a class="cc-brand" th:href="@{/}">Cine<span>Conecta</span></a>
 
     <div class="cc-nav-links">
+        <a th:classappend="${active == 'catalog'} ? 'active'" th:href="@{/catalog}">Catálogo</a>
         <th:block sec:authorize="isAuthenticated()">
-            <a th:classappend="${active == 'catalog'} ? 'active'" th:href="@{/catalog}">Catálogo</a>
             <a th:if="${currentProfile != null}"
                th:classappend="${active == 'my-list'} ? 'active'"
                th:href="@{/viewing/profiles/{id}/my-list(id=${currentProfile.profileId()})}">Mi lista</a>

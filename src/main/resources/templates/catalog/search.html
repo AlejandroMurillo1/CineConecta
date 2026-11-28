@@ -1,36 +1,88 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{catalog/fragments/layout :: head('Catálogo')}" />
+<head th:replace="~{shared/layout :: head('Catálogo', ~{::link})}">
+    <link rel="stylesheet" th:href="@{/css/catalog.css}">
+</head>
 <body>
-<header th:replace="~{catalog/fragments/layout :: nav('catálogo')}" />
-<main class="container catalog-page">
-  <section class="catalog-intro"><p class="eyebrow">CINECONECTA · A TU RITMO</p><h1>Historias para descubrir</h1><p>Explora películas, series y documentales disponibles para tu perfil.</p></section>
-  <form class="filters" th:action="@{/catalog}" th:object="${filter}" method="get"
-        hx-get="/catalog" hx-target="#catalog-results" hx-swap="innerHTML" hx-push-url="true">
-    <label>Buscar por título<input type="search" th:field="*{title}" placeholder="Ej. Las casas del río" /></label>
-    <label>Tipo<select th:field="*{type}"><option value="">Todos</option><option th:each="item : ${types}" th:value="${item}" th:text="${item}"></option></select></label>
-    <label>Género<input th:field="*{genre}" placeholder="Drama" /></label>
-    <label>Idioma de audio<input th:field="*{audioLanguage}" placeholder="es" /></label>
-    <label>Año<input type="number" th:field="*{year}" min="1888" max="2100" placeholder="2024" /></label>
-    <input type="hidden" th:field="*{page}" value="0" /><input type="hidden" th:field="*{size}" />
-    <button class="button button-primary" type="submit">Aplicar filtros</button>
-  </form>
-  <div th:replace="~{catalog/fragments/layout :: notice(${error}, null)}"></div>
-  <section id="catalog-results" th:fragment="results">
-    <p class="result-count" th:text="${page.totalElements + ' títulos'}">0 títulos</p>
-    <div class="content-grid" th:if="${!page.empty}">
-      <a class="content-card" th:each="item : ${page.content}" th:href="@{/catalog/{id}(id=${item.id})}">
-        <div class="poster-frame"><img th:src="${item.posterUrl}" th:alt="${'Afiche de ' + item.title}" loading="lazy" /></div>
-        <div class="card-copy"><span class="eyebrow" th:text="${item.type}">PELÍCULA</span><h2 th:text="${item.title}">Título</h2><p><span th:text="${item.year}"></span><span class="separator">·</span><span th:text="${item.ageRating + '+'}"></span></p><div class="tag-list"><span th:each="genre : ${item.genres}" th:text="${genre}"></span></div></div>
-      </a>
-    </div>
-    <div class="empty-state" th:if="${page.empty}"><h2>No encontramos títulos</h2><p>Prueba cambiando o quitando alguno de los filtros.</p></div>
-    <nav class="pagination" th:if="${page.totalPages > 1}" aria-label="Paginación">
-      <button class="button button-quiet" th:if="${page.hasPrevious()}" th:attr="hx-get=@{/catalog(page=${page.number - 1},size=${page.size})}" hx-target="#catalog-results" hx-swap="outerHTML">Anterior</button>
-      <span th:text="${'Página ' + (page.number + 1) + ' de ' + page.totalPages}"></span>
-      <button class="button button-quiet" th:if="${page.hasNext()}" th:attr="hx-get=@{/catalog(page=${page.number + 1},size=${page.size})}" hx-target="#catalog-results" hx-swap="outerHTML">Siguiente</button>
-    </nav>
-  </section>
+<nav th:replace="~{shared/layout :: navbar('catalog')}"></nav>
+
+<main id="main" class="cc-container">
+    <header class="cc-header cc-fade-in">
+        <p class="cat-eyebrow">CineConecta · A tu ritmo</p>
+        <h1>Historias para descubrir</h1>
+        <p class="cc-muted">Explora películas, series y documentales disponibles para tu perfil.</p>
+    </header>
+
+    <form class="cc-card cat-filters" th:action="@{/catalog}" th:object="${filter}" method="get"
+          hx-get="/catalog" hx-target="#catalog-results" hx-swap="innerHTML" hx-push-url="true">
+        <div class="cc-field">
+            <label for="filter-title">Buscar por título</label>
+            <input id="filter-title" class="cc-input" type="search" th:field="*{title}" placeholder="Ej. Las casas del río">
+        </div>
+        <div class="cc-field">
+            <label for="filter-type">Tipo</label>
+            <select id="filter-type" class="cc-select" th:field="*{type}">
+                <option value="">Todos</option>
+                <option th:each="item : ${types}" th:value="${item}" th:text="${item}"></option>
+            </select>
+        </div>
+        <div class="cc-field">
+            <label for="filter-genre">Género</label>
+            <input id="filter-genre" class="cc-input" th:field="*{genre}" placeholder="Drama">
+        </div>
+        <div class="cc-field">
+            <label for="filter-audio">Idioma de audio</label>
+            <input id="filter-audio" class="cc-input" th:field="*{audioLanguage}" placeholder="es">
+        </div>
+        <div class="cc-field">
+            <label for="filter-year">Año</label>
+            <input id="filter-year" class="cc-input" type="number" th:field="*{year}" min="1888" max="2100" placeholder="2024">
+        </div>
+        <input type="hidden" th:field="*{page}" value="0">
+        <input type="hidden" th:field="*{size}">
+        <button class="cc-btn cc-btn-primary" type="submit">Aplicar filtros</button>
+    </form>
+
+    <div th:replace="~{shared/layout :: flash}"></div>
+
+    <section id="catalog-results" th:fragment="results">
+        <p class="cat-result-count" th:text="${page.totalElements + ' títulos'}">0 títulos</p>
+
+        <div class="cat-grid" th:if="${!page.empty}">
+            <a class="cat-card" th:each="item : ${page.content}" th:href="@{/catalog/{id}(id=${item.id})}">
+                <div class="cat-poster-frame">
+                    <img th:src="${item.posterUrl}" th:alt="${'Afiche de ' + item.title}" loading="lazy">
+                </div>
+                <div class="cat-card-body">
+                    <span class="cat-eyebrow" th:text="${item.type}">PELÍCULA</span>
+                    <h2 th:text="${item.title}">Título</h2>
+                    <p class="cat-card-meta">
+                        <span th:text="${item.year}"></span> · <span th:text="${item.ageRating + '+'}"></span>
+                    </p>
+                    <div class="cat-tag-list">
+                        <span class="cat-tag" th:each="genre : ${item.genres}" th:text="${genre}"></span>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="cat-empty-state" th:if="${page.empty}">
+            <h2>No encontramos títulos</h2>
+            <p>Prueba cambiando o quitando alguno de los filtros.</p>
+        </div>
+
+        <nav class="cat-pagination" th:if="${page.totalPages > 1}" aria-label="Paginación">
+            <button class="cc-btn cc-btn-secondary" th:if="${page.hasPrevious()}"
+                    th:attr="hx-get=@{/catalog(page=${page.number - 1},size=${page.size})}"
+                    hx-target="#catalog-results" hx-swap="outerHTML">Anterior</button>
+            <span th:text="${'Página ' + (page.number + 1) + ' de ' + page.totalPages}"></span>
+            <button class="cc-btn cc-btn-secondary" th:if="${page.hasNext()}"
+                    th:attr="hx-get=@{/catalog(page=${page.number + 1},size=${page.size})}"
+                    hx-target="#catalog-results" hx-swap="outerHTML">Siguiente</button>
+        </nav>
+    </section>
 </main>
-<footer th:replace="~{catalog/fragments/layout :: footer}" />
-</body></html>
+
+<footer th:replace="~{shared/layout :: footer}"></footer>
+</body>
+</html>

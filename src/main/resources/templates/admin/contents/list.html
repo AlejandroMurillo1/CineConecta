@@ -1,6 +1,92 @@
-<!doctype html><html lang="es" xmlns:th="http://www.thymeleaf.org"><head th:replace="~{catalog/fragments/layout :: head('Administrar catálogo')}" /><body>
-<header th:replace="~{catalog/fragments/layout :: nav('admin')}" /><main class="container admin-page"><div class="admin-heading"><div><p class="eyebrow">GESTIÓN DE CONTENIDO</p><h1>Catálogo</h1><p>Organiza las historias que aparecen en CineConecta.</p></div><a class="button button-primary" th:href="@{/admin/contents/new}">＋ Nuevo contenido</a></div>
-<div th:replace="~{catalog/fragments/layout :: notice(${message}, ${error})}"></div>
-<form class="admin-filters" th:action="@{/admin/contents}" method="get" hx-get="/admin/contents" hx-target="#content-list" hx-swap="outerHTML" hx-push-url="true"><label>Estado<select name="status"><option value="">Todos</option><option th:each="s : ${statuses}" th:value="${s}" th:text="${s}" th:selected="${s == status}"></option></select></label><label>Tipo<select name="type"><option value="">Todos</option><option th:each="t : ${types}" th:value="${t}" th:text="${t}" th:selected="${t == type}"></option></select></label><button class="button button-quiet">Filtrar</button></form>
-<section id="content-list" th:fragment="content-list"><div class="table-wrap"><table><thead><tr><th>Contenido</th><th>Tipo</th><th>Estado</th><th>Actualizado</th><th></th></tr></thead><tbody><tr th:each="item : ${contents.content}"><td><a class="admin-title" th:href="@{/admin/contents/{id}(id=${item.id})}" th:text="${item.title}"></a><small th:text="${item.year + ' · ' + item.ageRating + '+'}"></small></td><td th:text="${item.type}"></td><td><span class="status-pill" th:classappend="${' status-' + #strings.toLowerCase(item.status)}" th:text="${item.status}"></span></td><td th:text="${#temporals.format(item.updatedAt, 'dd MMM yyyy · HH:mm')}"></td><td><a class="text-link" th:href="@{/admin/contents/{id}(id=${item.id})}">Abrir →</a></td></tr><tr th:if="${contents.empty}"><td colspan="5" class="empty-row">No hay contenidos con estos filtros.</td></tr></tbody></table></div><nav class="pagination" th:if="${contents.totalPages > 1}"><a class="button button-quiet" th:if="${contents.hasPrevious()}" th:href="@{/admin/contents(page=${contents.number-1},status=${status},type=${type})}" th:attr="hx-get=@{/admin/contents(page=${contents.number-1},status=${status},type=${type})}" hx-target="#content-list" hx-swap="outerHTML">Anterior</a><span th:text="${'Página ' + (contents.number+1) + ' de ' + contents.totalPages}"></span><a class="button button-quiet" th:if="${contents.hasNext()}" th:href="@{/admin/contents(page=${contents.number+1},status=${status},type=${type})}" th:attr="hx-get=@{/admin/contents(page=${contents.number+1},status=${status},type=${type})}" hx-target="#content-list" hx-swap="outerHTML">Siguiente</a></nav></section>
-</main><footer th:replace="~{catalog/fragments/layout :: footer}" /></body></html>
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{shared/layout :: head('Administrar catálogo', ~{::link})}">
+    <link rel="stylesheet" th:href="@{/css/backoffice.css}">
+    <link rel="stylesheet" th:href="@{/css/catalog.css}">
+</head>
+<body>
+<nav th:replace="~{backoffice/fragments/admin-nav :: nav('catalog')}"></nav>
+
+<main id="main" class="cc-container">
+    <div class="cat-admin-header cc-fade-in">
+        <div>
+            <p class="cat-eyebrow">Gestión de contenido</p>
+            <h1>Catálogo</h1>
+            <p class="cc-muted">Organiza las historias que aparecen en CineConecta.</p>
+        </div>
+        <a class="cc-btn cc-btn-primary" th:href="@{/admin/contents/new}">＋ Nuevo contenido</a>
+    </div>
+
+    <div th:replace="~{shared/layout :: flash}"></div>
+    <div th:if="${message != null}" class="cc-alert cc-alert-success cc-fade-in" role="status" th:text="${message}"></div>
+
+    <form class="cc-card cat-filters cat-filters-admin" th:action="@{/admin/contents}" method="get"
+          hx-get="/admin/contents" hx-target="#content-list" hx-swap="outerHTML" hx-push-url="true">
+        <div class="cc-field">
+            <label for="admin-status">Estado</label>
+            <select id="admin-status" class="cc-select" name="status">
+                <option value="">Todos</option>
+                <option th:each="s : ${statuses}" th:value="${s}" th:text="${s}" th:selected="${s == status}"></option>
+            </select>
+        </div>
+        <div class="cc-field">
+            <label for="admin-type">Tipo</label>
+            <select id="admin-type" class="cc-select" name="type">
+                <option value="">Todos</option>
+                <option th:each="t : ${types}" th:value="${t}" th:text="${t}" th:selected="${t == type}"></option>
+            </select>
+        </div>
+        <button class="cc-btn cc-btn-secondary" type="submit">Filtrar</button>
+    </form>
+
+    <section id="content-list" th:fragment="content-list">
+        <div class="cc-table-wrap">
+            <table class="cc-table">
+                <thead>
+                <tr>
+                    <th>Contenido</th>
+                    <th>Tipo</th>
+                    <th>Estado</th>
+                    <th>Actualizado</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="item : ${contents.content}">
+                    <td>
+                        <a class="cat-admin-title" th:href="@{/admin/contents/{id}(id=${item.id})}" th:text="${item.title}"></a>
+                        <small class="cc-muted" th:text="${item.year + ' · ' + item.ageRating + '+'}"></small>
+                    </td>
+                    <td th:text="${item.type}"></td>
+                    <td>
+                        <span class="cc-badge"
+                              th:classappend="${item.status.name() == 'PUBLISHED' ? ' cc-badge-success' : (item.status.name() == 'DRAFT' ? ' cc-badge-warning' : ' cc-badge-danger')}"
+                              th:text="${item.status}"></span>
+                    </td>
+                    <td th:text="${#temporals.format(item.updatedAt, 'dd MMM yyyy · HH:mm')}"></td>
+                    <td><a th:href="@{/admin/contents/{id}(id=${item.id})}">Abrir →</a></td>
+                </tr>
+                <tr th:if="${contents.empty}">
+                    <td colspan="5" class="cc-muted" style="text-align: center; padding: 2rem;">No hay contenidos con estos filtros.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <nav class="cat-pagination" th:if="${contents.totalPages > 1}" aria-label="Paginación">
+            <a class="cc-btn cc-btn-secondary" th:if="${contents.hasPrevious()}"
+               th:href="@{/admin/contents(page=${contents.number-1},status=${status},type=${type})}"
+               th:attr="hx-get=@{/admin/contents(page=${contents.number-1},status=${status},type=${type})}"
+               hx-target="#content-list" hx-swap="outerHTML">Anterior</a>
+            <span th:text="${'Página ' + (contents.number+1) + ' de ' + contents.totalPages}"></span>
+            <a class="cc-btn cc-btn-secondary" th:if="${contents.hasNext()}"
+               th:href="@{/admin/contents(page=${contents.number+1},status=${status},type=${type})}"
+               th:attr="hx-get=@{/admin/contents(page=${contents.number+1},status=${status},type=${type})}"
+               hx-target="#content-list" hx-swap="outerHTML">Siguiente</a>
+        </nav>
+    </section>
+</main>
+
+<footer th:replace="~{shared/layout :: footer}"></footer>
+</body>
+</html>
