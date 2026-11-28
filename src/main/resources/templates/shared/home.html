@@ -12,6 +12,12 @@
         <p class="cc-muted">Elige un plan, crea perfiles para tu familia y retoma lo que estabas viendo.</p>
     </header>
 
+    <!--/* "Continuar viendo" del perfil en uso. Lo dibuja el módulo viewing y se carga con htmx al
+         abrir la página: si no hay nada pendiente (o MongoDB no responde) no aparece nada. */-->
+    <div th:if="${currentProfile != null}" id="cw-home"
+         th:attr="hx-get=@{/viewing/continue-watching/home-section}"
+         hx-trigger="load" hx-swap="outerHTML"></div>
+
     <div class="cc-grid">
         <section class="cc-card">
             <div>

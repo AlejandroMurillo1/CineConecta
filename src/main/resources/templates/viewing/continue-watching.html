@@ -2,24 +2,21 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{shared/layout :: head('Continuar viendo', ~{})}"></head>
 <body>
-<nav th:replace="~{shared/layout :: navbar('catalog')}"></nav>
+<nav th:replace="~{shared/layout :: navbar('continue-watching')}"></nav>
 
 <main id="main" class="cc-container">
-    <header class="cc-header"><h1>Continuar viendo</h1></header>
-    <p th:if="${error}" th:text="${error}" class="cc-alert cc-alert-warning" role="alert"></p>
-    <p th:if="${items.isEmpty()}" class="cc-card">No tienes reproducciones pendientes.</p>
-    <ul th:unless="${items.isEmpty()}" class="cc-card">
-        <li th:each="item : ${items}" th:with="p=${item.position()}">
-            <strong th:text="${item.title()}">Título</strong>
-            <span th:if="${item.episodeTitle() != null}" class="cc-muted" th:text="${' — ' + item.episodeTitle()}">Episodio</span>
-            <span class="cc-muted">· vas en
-                <span th:text="${#numbers.formatInteger(p / 3600, 2) + ':' + #numbers.formatInteger(p % 3600 / 60, 2) + ':' + #numbers.formatInteger(p % 60, 2)}">00:00:00</span></span>
-            <form th:action="@{/viewing/continue-watching/{id}(id=${item.sessionId()})}"
-                  method="post" style="display:inline">
-                <button type="submit" class="cc-btn cc-btn-primary">▶ Continuar</button>
-            </form>
-        </li>
-    </ul>
+    <div th:replace="~{shared/layout :: flash}"></div>
+
+    <header class="cc-header">
+        <h1>Continuar viendo</h1>
+        <p class="cc-muted">Retoma desde donde ibas. Los títulos que terminaste ya no aparecen aquí.</p>
+    </header>
+
+    <p th:if="${items.isEmpty()}" class="cc-card">
+        No tienes reproducciones pendientes. Busca algo para ver en el <a th:href="@{/catalog}">catálogo</a>.
+    </p>
+    <div th:unless="${items.isEmpty()}" class="cw-wrap"
+         th:insert="~{viewing/fragments/continue-watching :: cards(${items})}"></div>
 </main>
 
 <footer th:replace="~{shared/layout :: footer}"></footer>

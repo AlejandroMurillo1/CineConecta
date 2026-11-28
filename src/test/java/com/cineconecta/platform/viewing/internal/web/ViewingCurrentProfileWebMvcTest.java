@@ -85,6 +85,77 @@ class ViewingCurrentProfileWebMvcTest {
         verify(playback, never()).start(anyInt(), org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.any());
     }
 
+    // "Continuar viendo" en la página de inicio (sección cargada con htmx)
+
+    private static final PlaybackService.ContinueItem EPISODE = new PlaybackService.ContinueItem(
+            "6740a1f0c3b2a1d4e5f600a1", "6740a1f0c3b2a1d4e5f60001", "Río Abajo", "La subasta",
+            1, 2, 1410, 2820, "/images/posters/6740a1f0c3b2a1d4e5f60001.svg");
+    private static final PlaybackService.ContinueItem MOVIE = new PlaybackService.ContinueItem(
+            "6740a1f0c3b2a1d4e5f600a2", "6740a1f0c3b2a1d4e5f60002", "Noche en San Antonio", null,
+            null, null, 600, 6240, "/images/posters/6740a1f0c3b2a1d4e5f60002.svg");
+
+    @Test
+    void homeSectionShowsPendingTitlesOfTheProfileInUse() throws Exception {
+        when(currentProfile.current()).thenReturn(Optional.of(ANA));
+        when(playback.continueWatching(7)).thenReturn(List.of(EPISODE, MOVIE));
+
+        mockMvc.perform(get("/viewing/continue-watching/home-section").header("HX-Request", "true"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Continuar viendo")))
+                .andExpect(content().string(containsString("Río Abajo")))
+                .andExpect(content().string(containsString("T1 · E2")))
+                .andExpect(content().string(containsString("width:50%")))
+                .andExpect(content().string(containsString("Te quedan 24 min")))
+                .andExpect(content().string(containsString("Noche en San Antonio")))
+                .andExpect(content().string(containsString("action=\"/viewing/continue-watching/6740a1f0c3b2a1d4e5f600a1\"")))
+                .andExpect(content().string(containsString("href=\"/catalog/6740a1f0c3b2a1d4e5f60002\"")))
+                // Es un fragmento: sin la página completa alrededor.
+                .andExpect(content().string(org.hamcrest.Matchers.not(containsString("<html"))));
+    }
+
+    @Test
+    void homeSectionIsEmptyWithoutProfileInUseAndDoesNotRedirect() throws Exception {
+        when(currentProfile.current()).thenReturn(Optional.empty());
+
+        mockMvc.perform(get("/viewing/continue-watching/home-section"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.not(containsString("cw-"))));
+        verify(playback, never()).continueWatching(anyInt());
+    }
+
+    @Test
+    void homeSectionIsEmptyWithoutAValidSubscription() throws Exception {
+        when(currentProfile.current()).thenReturn(Optional.of(ANA));
+        when(playback.continueWatching(7))
+                .thenThrow(new org.springframework.security.access.AccessDeniedException("Necesitas una suscripción vigente"));
+
+        mockMvc.perform(get("/viewing/continue-watching/home-section"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.not(containsString("cw-"))));
+    }
+
+    @Test
+    void homeSectionIsEmptyWhenNothingIsPending() throws Exception {
+        when(currentProfile.current()).thenReturn(Optional.of(ANA));
+        when(playback.continueWatching(7)).thenReturn(List.of());
+
+        mockMvc.perform(get("/viewing/continue-watching/home-section"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.not(containsString("cw-section"))));
+    }
+
+    @Test
+    void continueWatchingPageUsesTheSameCards() throws Exception {
+        when(currentProfile.require()).thenReturn(ANA);
+        when(playback.continueWatching(7)).thenReturn(List.of(EPISODE));
+
+        mockMvc.perform(get("/viewing/continue-watching"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("<html")))
+                .andExpect(content().string(containsString("cw-card")))
+                .andExpect(content().string(containsString("Río Abajo")));
+    }
+
     @Test
     void oldUrlsWithProfileIdNoLongerExist() throws Exception {
         mockMvc.perform(get("/viewing/profiles/7/my-list")).andExpect(status().isNotFound());

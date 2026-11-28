@@ -16,6 +16,8 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.UUID;
 
 @Service
@@ -78,6 +80,9 @@ public class PlaybackService {
                 .sorted(Comparator.comparing(PlaybackSession::lastActivityAt).reversed())
                 .toList();
         var titles = catalog.findPlayables(sessions.stream().map(PlaybackSession::key).toList());
+        // Una tarjeta por título: de una serie se muestra solo el episodio con actividad más reciente
+        // (las sesiones ya vienen ordenadas así).
+        Set<String> shownContents = new HashSet<>();
 
         return sessions.stream()
                 .filter(session -> {
@@ -85,9 +90,12 @@ public class PlaybackService {
                     return title != null && title.ageRating() <= profile.maxAgeRating()
                             && (long) session.lastPosition() * 10 < (long) title.durationSeconds() * 9;
                 })
+                .filter(session -> shownContents.add(session.contentId()))
                 .map(session -> {
                     PlayableRef title = titles.get(session.key());
-                    return new ContinueItem(session.id(), title.title(), title.episodeTitle(), session.lastPosition());
+                    return new ContinueItem(session.id(), title.contentId(), title.title(), title.episodeTitle(),
+                            title.seasonNumber(), title.episodeNumber(), session.lastPosition(),
+                            title.durationSeconds(), title.posterUrl());
                 })
                 .toList();
     }
@@ -164,7 +172,26 @@ public class PlaybackService {
         return clock.instant().truncatedTo(ChronoUnit.MILLIS);
     }
 
-    public record ContinueItem(String sessionId, String title, String episodeTitle, int position) {}
+    /** Título pendiente del perfil: dónde quedó y cuánto falta, con lo necesario para mostrarlo en una tarjeta. */
+    public record ContinueItem(String sessionId, String contentId, String title, String episodeTitle,
+                               Integer seasonNumber, Integer episodeNumber, int position,
+                               int durationSeconds, String posterUrl) {
+
+        /** Porcentaje visto (0 a 100), para la barra de progreso. */
+        public int progressPercent() {
+            return durationSeconds <= 0 ? 0 : (int) Math.min(100, (long) position * 100 / durationSeconds);
+        }
+
+        /** Minutos que faltan, redondeados hacia arriba (al menos 1). */
+        public int remainingMinutes() {
+            return Math.max(1, (Math.max(0, durationSeconds - position) + 59) / 60);
+        }
+
+        /** "T1 · E2" en las series; null en películas y documentales. */
+        public String episodeLabel() {
+            return seasonNumber == null || episodeNumber == null ? null : "T" + seasonNumber + " · E" + episodeNumber;
+        }
+    }
 
     private String validId(String value) {
         if (value == null || !ObjectId.isValid(value.strip())) {
