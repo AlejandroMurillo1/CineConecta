@@ -19,23 +19,35 @@
             Las fechas se interpretan en hora de Colombia e incluyen el día inicial y el final.</p>
     </header>
 
-    <form class="cc-card rp-filters" method="get" th:action="@{/admin/reports/consumption}">
-        <label>Desde
-            <input type="date" name="from" th:value="${from}" required>
-        </label>
-        <label>Hasta
-            <input type="date" name="to" th:value="${to}" required>
-        </label>
-        <button type="submit" class="cc-btn cc-btn-primary">Consultar</button>
-        <a th:if="${report != null}"
-           th:href="@{/admin/reports/consumption.csv(from=${from}, to=${to})}"
-           class="cc-btn cc-btn-secondary">Exportar CSV</a>
-    </form>
+    <div class="rp-top" th:classappend="${report != null and report.hasData()} ? 'rp-top-with-chart'">
+        <section class="cc-card rp-chart-card" th:if="${report != null and report.hasData()}">
+            <h2 class="rp-chart-title">Minutos consumidos por plan y tipo de contenido</h2>
+            <div class="rp-chart-box">
+                <canvas id="rp-chart" data-report="consumption" role="img"
+                        aria-label="Gráfica de barras agrupadas con los minutos consumidos por plan y tipo de contenido"></canvas>
+            </div>
+        </section>
+        <form class="cc-card rp-filters" method="get" th:action="@{/admin/reports/consumption}">
+            <label>Desde
+                <input type="date" name="from" th:value="${from}" required>
+            </label>
+            <label>Hasta
+                <input type="date" name="to" th:value="${to}" required>
+            </label>
+            <button type="submit" class="cc-btn cc-btn-primary">Consultar</button>
+        </form>
+    </div>
 
     <div th:if="${errorMessage != null}" class="cc-alert cc-alert-warning" th:text="${errorMessage}">Aviso</div>
 
     <div th:if="${report != null and !report.hasData()}" class="cc-alert cc-alert-info">
         No hay reproducciones registradas en este período.
+    </div>
+
+    <div class="rp-table-bar" th:if="${report != null and report.hasData()}">
+        <h2 class="rp-chart-title">Detalle por plan</h2>
+        <a th:href="@{/admin/reports/consumption.csv(from=${from}, to=${to})}"
+           class="cc-btn cc-btn-secondary" title="Descarga la tabla de abajo en formato CSV">Exportar tabla (CSV)</a>
     </div>
 
     <table class="cc-table" th:if="${report != null and report.hasData()}">
@@ -48,7 +60,8 @@
         </tr>
         </thead>
         <tbody>
-        <tr th:each="row : ${report.rows()}">
+        <tr th:each="row : ${report.rows()}"
+            th:attr="data-plan=${row.planName()}, data-type=${row.typeLabel()}, data-minutes=${row.minutes()}, data-profiles=${row.distinctProfiles()}">
             <td th:text="${row.planName()}">Estándar</td>
             <td th:text="${row.typeLabel()}">Película</td>
             <td class="rp-num" th:text="${#numbers.formatDecimal(row.minutes(), 1, 'POINT', 2, 'COMMA')}">0,00</td>
@@ -64,5 +77,7 @@
         </tfoot>
     </table>
 </main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script th:src="@{/js/reporting-charts.js}"></script>
 </body>
 </html>

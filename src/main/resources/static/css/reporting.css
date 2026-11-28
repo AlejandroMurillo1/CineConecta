@@ -2,6 +2,8 @@
 
 .rp-filters {
     display: flex;
+    width: fit-content;
+    max-width: 100%;
     flex-wrap: wrap;
     align-items: flex-end;
     gap: 1rem;
@@ -34,4 +36,109 @@
 .rp-total td {
     font-weight: 700;
     border-top: 2px solid var(--cc-border);
+}
+
+
+.rp-chart-card {
+    margin-bottom: 1.5rem;
+}
+
+.rp-chart-title {
+    margin: 0 0 1rem;
+    font-size: 1.1rem;
+}
+
+.rp-chart-box {
+    position: relative;
+    height: 320px;
+}
+
+.rp-top {
+    margin-bottom: 1.5rem;
+}
+
+.rp-top-with-chart {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 260px;
+    gap: 1.5rem;
+    align-items: start;
+}
+
+.rp-top .rp-chart-card,
+.rp-top .rp-filters {
+    margin-bottom: 0;
+}
+
+.rp-top-with-chart .rp-filters {
+    flex-direction: column;
+    align-items: stretch;
+    width: auto;
+}
+
+.rp-top-with-chart .rp-filters input[type="date"] {
+    width: 100%;
+}
+
+.rp-table-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.rp-table-bar .rp-chart-title {
+    margin: 0;
+}
+
+@media (max-width: 800px) {
+    .rp-top-with-chart {
+        grid-template-columns: 1fr;
+    }
+
+    .rp-top-with-chart .rp-filters {
+        order: -1;
+    }
+}
+
+.rp-chart-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.rp-chart-head .rp-chart-title {
+    margin: 0;
+}
+
+.rp-toggle {
+    display: inline-flex;
+    border: 1px solid var(--cc-border);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.rp-toggle button {
+    padding: 0.4rem 0.9rem;
+    border: 0;
+    background: var(--cc-surface-soft);
+    color: var(--cc-muted);
+    font: inherit;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.rp-toggle button + button {
+    border-left: 1px solid var(--cc-border);
+}
+
+.rp-toggle button[aria-pressed="true"] {
+    background: var(--cc-accent);
+    color: var(--cc-text);
+}
+
+.rp-toggle button:not([aria-pressed="true"]):hover {
+    color: var(--cc-text);
 }
