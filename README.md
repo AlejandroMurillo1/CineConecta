@@ -70,13 +70,23 @@ spring.datasource.password=cine_app_dev
 spring.mongodb.uri=mongodb://cineApp:cine_app_dev@localhost:27018/cineconecta?authSource=cineconecta
 ```
 
-Luego arranque con el perfil `local`:
+Luego arranque la aplicación:
 
 ```bash
-./mvnw spring-boot:run -Dspring-boot.run.profiles=local      # Windows: mvnw.cmd ...
+./mvnw spring-boot:run      # Windows: mvnw.cmd spring-boot:run
 ```
 
 La aplicación queda en http://localhost:8080 y el panel de administración en http://localhost:8080/admin.
+
+| Pantalla | Ruta |
+|---|---|
+| Registro e inicio de sesión de clientes | `/register`, `/login` |
+| Perfiles (crear, editar, elegir) | `/profiles` |
+| Catálogo (filtrado por la clasificación del perfil en uso) | `/catalog` |
+| Planes, contratación e historial | `/billing/plans`, `/billing/history` |
+| Reproductor, continuar viendo y Mi lista | `/viewing/player`, `/viewing/continue-watching`, `/viewing/my-list` |
+| Administración: catálogo | `/admin/contents` |
+| Administración: informes de ingresos y de consumo por plan | `/admin/reports/revenue`, `/admin/reports/consumption` |
 
 > No defina `POSTGRES_PASSWORD` en el `.env`: el compose la usa para el superusuario `cine`, y la aplicación la tomaría como contraseña de `cine_app`.
 
