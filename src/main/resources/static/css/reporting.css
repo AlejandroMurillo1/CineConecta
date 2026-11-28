@@ -100,3 +100,45 @@
         order: -1;
     }
 }
+
+.rp-chart-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.rp-chart-head .rp-chart-title {
+    margin: 0;
+}
+
+.rp-toggle {
+    display: inline-flex;
+    border: 1px solid var(--cc-border);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.rp-toggle button {
+    padding: 0.4rem 0.9rem;
+    border: 0;
+    background: var(--cc-surface-soft);
+    color: var(--cc-muted);
+    font: inherit;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.rp-toggle button + button {
+    border-left: 1px solid var(--cc-border);
+}
+
+.rp-toggle button[aria-pressed="true"] {
+    background: var(--cc-accent);
+    color: var(--cc-text);
+}
+
+.rp-toggle button:not([aria-pressed="true"]):hover {
+    color: var(--cc-text);
+}

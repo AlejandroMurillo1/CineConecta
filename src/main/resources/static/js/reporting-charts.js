@@ -47,60 +47,95 @@
         config.options.responsive = true;
         config.options.maintainAspectRatio = false;
         config.options.interaction = {mode: 'index', intersect: false};
-        new Chart(canvas, config);
+        return new Chart(canvas, config);
     }
 
     if (canvas.dataset.report === 'revenue') {
-        render({
+        var revenues = rows.map(function (r) { return Number(r.dataset.revenue); });
+        var counts = rows.map(function (r) { return Number(r.dataset.count); });
+        var sum = function (values) {
+            return values.reduce(function (a, b) { return a + b; }, 0);
+        };
+        var metrics = {
+            revenue: {
+                label: 'Total recaudado',
+                color: PALETTE[0],
+                values: revenues,
+                total: sum(revenues),
+                format: function (v) { return '$' + money.format(v) + ' COP'; },
+                tick: function (v) { return '$' + money.format(v); }
+            },
+            count: {
+                label: 'Suscripciones adquiridas',
+                color: PALETTE[1],
+                values: counts,
+                total: sum(counts),
+                format: function (v) { return v + (v === 1 ? ' suscripción' : ' suscripciones'); },
+                tick: function (v) { return v; }
+            }
+        };
+        // Con muchos planes las etiquetas se amontonan: barras horizontales.
+        var horizontal = plans.length > 6;
+        var valueAxis = horizontal ? 'x' : 'y';
+        var categoryAxis = horizontal ? 'y' : 'x';
+        var current = 'revenue';
+
+        var scales = {};
+        scales[categoryAxis] = xAxis;
+        scales[valueAxis] = {
+            beginAtZero: true,
+            grid: {color: GRID},
+            ticks: {precision: 0, callback: metrics.revenue.tick}
+        };
+
+        var chart = render({
             data: {
                 labels: plans,
-                datasets: [
-                    {
-                        label: 'Total recaudado',
-                        data: rows.map(function (r) { return Number(r.dataset.revenue); }),
-                        backgroundColor: PALETTE[0],
-                        borderRadius: 6,
-                        yAxisID: 'y'
-                    },
-                    {
-                        label: 'Suscripciones adquiridas',
-                        data: rows.map(function (r) { return Number(r.dataset.count); }),
-                        backgroundColor: PALETTE[1],
-                        borderRadius: 6,
-                        yAxisID: 'y1'
-                    }
-                ]
+                datasets: [{
+                    label: metrics.revenue.label,
+                    data: metrics.revenue.values,
+                    backgroundColor: metrics.revenue.color,
+                    borderRadius: 6
+                }]
             },
             options: {
+                indexAxis: horizontal ? 'y' : 'x',
                 plugins: {
-                    legend: {labels: {color: TEXT}},
+                    legend: {display: false},
                     tooltip: Object.assign({
                         callbacks: {
                             label: function (ctx) {
-                                return ctx.dataset.yAxisID === 'y'
-                                    ? ctx.dataset.label + ': $' + money.format(ctx.parsed.y) + ' COP'
-                                    : ctx.dataset.label + ': ' + ctx.parsed.y;
+                                var m = metrics[current];
+                                var other = metrics[current === 'revenue' ? 'count' : 'revenue'];
+                                var v = ctx.parsed[valueAxis];
+                                var share = m.total > 0 ? ' (' + decimal.format(v * 100 / m.total) + ' % del total)' : '';
+                                return [
+                                    m.label + ': ' + m.format(v) + share,
+                                    other.label + ': ' + other.format(other.values[ctx.dataIndex])
+                                ];
                             }
                         }
                     }, TOOLTIP)
                 },
-                scales: {
-                    x: xAxis,
-                    y: {
-                        beginAtZero: true,
-                        grid: {color: GRID},
-                        title: {display: true, text: 'COP'},
-                        ticks: {callback: function (v) { return '$' + money.format(v); }}
-                    },
-                    y1: {
-                        beginAtZero: true,
-                        position: 'right',
-                        grid: {drawOnChartArea: false},
-                        title: {display: true, text: 'Suscripciones'},
-                        ticks: {precision: 0}
-                    }
-                }
+                scales: scales
             }
+        });
+
+        var buttons = document.querySelectorAll('[data-metric]');
+        Array.prototype.forEach.call(buttons, function (button) {
+            button.addEventListener('click', function () {
+                current = button.dataset.metric;
+                var m = metrics[current];
+                var dataset = chart.data.datasets[0];
+                dataset.label = m.label;
+                dataset.data = m.values;
+                dataset.backgroundColor = m.color;
+                chart.options.scales[valueAxis].ticks.callback = m.tick;
+                chart.update();
+                Array.prototype.forEach.call(buttons, function (b) {
+                    b.setAttribute('aria-pressed', String(b === button));
+                });
+            });
         });
     } else if (canvas.dataset.report === 'consumption') {
         var types = unique(rows.map(function (r) { return r.dataset.type; }));

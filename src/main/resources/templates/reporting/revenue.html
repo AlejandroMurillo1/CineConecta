@@ -20,10 +20,16 @@
 
     <div class="rp-top" th:classappend="${report != null and report.hasData()} ? 'rp-top-with-chart'">
         <section class="cc-card rp-chart-card" th:if="${report != null and report.hasData()}">
-            <h2 class="rp-chart-title">Ingresos y suscripciones por plan</h2>
+            <div class="rp-chart-head">
+                <h2 class="rp-chart-title">Por plan</h2>
+                <div class="rp-toggle" role="group" aria-label="Métrica de la gráfica">
+                    <button type="button" data-metric="revenue" aria-pressed="true">Ingresos</button>
+                    <button type="button" data-metric="count" aria-pressed="false">Suscripciones</button>
+                </div>
+            </div>
             <div class="rp-chart-box">
                 <canvas id="rp-chart" data-report="revenue" role="img"
-                        aria-label="Gráfica de barras con el total recaudado y las suscripciones adquiridas por plan"></canvas>
+                        aria-label="Gráfica de barras con el total recaudado o las suscripciones adquiridas por plan, según la métrica elegida"></canvas>
             </div>
         </section>
         <form class="cc-card rp-filters" method="get" th:action="@{/admin/reports/revenue}">
