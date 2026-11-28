@@ -40,7 +40,7 @@
         <th:block sec:authorize="isAuthenticated()">
             <a th:if="${currentProfile != null}"
                th:classappend="${active == 'my-list'} ? 'active'"
-               th:href="@{/viewing/profiles/{id}/my-list(id=${currentProfile.profileId()})}">Mi lista</a>
+               th:href="@{/viewing/my-list}">Mi lista</a>
             <a th:classappend="${active == 'profiles'} ? 'active'" th:href="@{/profiles}">Perfiles</a>
         </th:block>
         <a th:classappend="${active == 'plans'} ? 'active'" th:href="@{/billing/plans}">Planes</a>

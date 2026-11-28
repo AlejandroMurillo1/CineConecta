@@ -9,13 +9,13 @@
 </head>
 <body>
 <nav class="cc-navbar">
-    <a class="cc-brand" th:href="@{/viewing/profiles/{id}/my-list(id=${profileId})}">Mi lista</a>
+    <a class="cc-brand" th:href="@{/viewing/my-list}">Mi lista</a>
 </nav>
 <main class="cc-container">
     <header class="cc-header"><h1>Reproductor simulado</h1></header>
     <p th:if="${error}" th:text="${error}" class="cc-alert cc-alert-warning" role="alert"></p>
 
-    <form th:unless="${playbackSession}" th:action="@{/viewing/profiles/{id}/player(id=${profileId})}"
+    <form th:unless="${playbackSession}" th:action="@{/viewing/player}"
           method="post" class="cc-card">
         <label for="titleId">ID del título</label>
         <input id="titleId" name="contentId" required>
@@ -34,10 +34,10 @@
                   th:value="${position}" th:max="${playbackSession.durationSeconds()}"
                   th:data-playing="${playbackSession.playingSince() != null}"></progress>
         <form id="playback-checkpoint" hidden th:if="${playbackSession.playingSince() != null}"
-              th:action="@{/viewing/profiles/{profile}/player/{id}/checkpoint(profile=${profileId},id=${playbackSession.id()})}"
+              th:action="@{/viewing/player/{id}/checkpoint(id=${playbackSession.id()})}"
               method="post"></form>
         <form id="playback-controls" th:if="${playbackSession.endedAt() == null}"
-              th:action="@{/viewing/profiles/{profile}/player/{id}(profile=${profileId},id=${playbackSession.id()})}" method="post">
+              th:action="@{/viewing/player/{id}(id=${playbackSession.id()})}" method="post">
             <button th:if="${playbackSession.playingSince() != null}" id="playback-pause"
                     name="action" value="PAUSE" class="cc-btn">Pausar</button>
             <button th:if="${playbackSession.playingSince() == null}"
@@ -47,7 +47,7 @@
             <button name="action" value="SEEK" class="cc-btn">Avanzar</button>
             <button name="action" value="FINISH" class="cc-btn cc-btn-primary">Finalizar</button>
         </form>
-        <a th:if="${playbackSession.endedAt() != null}" th:href="@{/viewing/profiles/{id}/player(id=${profileId})}">
+        <a th:if="${playbackSession.endedAt() != null}" th:href="@{/viewing/player}">
             Iniciar otra reproducción
         </a>
     </section>

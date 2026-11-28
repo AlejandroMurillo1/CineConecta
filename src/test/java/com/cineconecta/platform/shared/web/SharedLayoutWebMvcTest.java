@@ -58,7 +58,7 @@ class SharedLayoutWebMvcTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
                         containsString("Cerrar sesión"),
-                        containsString("href=\"/viewing/profiles/7/my-list\""),
+                        containsString("href=\"/viewing/my-list\""),
                         containsString(">Sofía</a>"),
                         containsString("href=\"/billing/plans\" class=\"active\""),
                         not(containsString("href=\"/register\"")))));

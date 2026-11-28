@@ -12,11 +12,11 @@
 </nav>
 <main class="cc-container">
     <header class="cc-header"><h1>Mi lista</h1></header>
-    <p><a th:href="@{/viewing/profiles/{id}/continue-watching(id=${profileId})}">Continuar viendo</a></p>
-    <p><a th:href="@{/viewing/profiles/{id}/player(id=${profileId})}">Abrir reproductor simulado</a></p>
+    <p><a th:href="@{/viewing/continue-watching}">Continuar viendo</a></p>
+    <p><a th:href="@{/viewing/player}">Abrir reproductor simulado</a></p>
 
     <p th:if="${error}" th:text="${error}" class="cc-alert cc-alert-warning" role="alert"></p>
-    <form th:action="@{/viewing/profiles/{id}/my-list(id=${profileId})}" method="post" class="cc-card">
+    <form th:action="@{/viewing/my-list}" method="post" class="cc-card">
         <label for="contentId">ID del título</label>
         <input id="contentId" name="contentId" type="text" required>
         <button type="submit" class="cc-btn cc-btn-primary">Agregar a mi lista</button>
@@ -27,7 +27,7 @@
         <li th:each="title : ${titles}">
             <strong th:text="${title.title()}">Título</strong>
             <span th:if="${!title.status().isEmpty()}" th:text="${title.status()}">Retirado</span>
-            <form th:action="@{/viewing/profiles/{id}/my-list/remove(id=${profileId})}" method="post">
+            <form th:action="@{/viewing/my-list/remove}" method="post">
                 <input type="hidden" name="contentId" th:value="${title.id()}">
                 <button type="submit" class="cc-btn">Quitar de mi lista</button>
             </form>
