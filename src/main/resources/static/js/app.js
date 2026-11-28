@@ -37,6 +37,10 @@
             window.location.href = "/login";
             return;
         }
+        if (status === 503) {
+            showError("El servicio no está disponible en este momento. Intenta de nuevo en unos minutos.");
+            return;
+        }
         showError(status === 403
             ? "No tienes permiso para realizar esta acción."
             : "No se pudo completar la operación. Intenta de nuevo.");
