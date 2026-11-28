@@ -131,6 +131,17 @@ public class PlaybackService {
         return new WatchedTitles(store.completedKeys(profile.accountId(), profile.profileId()));
     }
 
+    /** Sesión reanudable más reciente por {@code contentId} para mostrar "Continuar viendo" en el catálogo. */
+    public java.util.Map<String, String> resumableSessionIds(ProfileView profile) {
+        return store.latestPerTitle(profile.accountId(), profile.profileId()).stream()
+                .filter(session -> !session.completed() && session.lastPosition() > 0)
+                .sorted(Comparator.comparing(PlaybackSession::lastActivityAt).reversed())
+                .collect(java.util.stream.Collectors.toMap(
+                        PlaybackSession::contentId,
+                        PlaybackSession::id,
+                        (first, _) -> first));
+    }
+
     /** Título y episodio de la sesión, para mostrarlos en el reproductor (vacío si ya no está publicado). */
     public java.util.Optional<PlayableRef> describe(PlaybackSession session) {
         return catalog.findPlayable(session.contentId(), session.episodeId());

@@ -51,4 +51,22 @@ public class WatchedTitlesAdvice {
             return WatchedTitles.NONE;
         }
     }
+
+    @ModelAttribute("resumableSessions")
+    public java.util.Map<String, String> resumableSessions(HttpServletRequest request) {
+        if (request.getRequestURI().startsWith(request.getContextPath() + "/admin")) {
+            return java.util.Map.of();
+        }
+        CurrentProfile profiles = currentProfile.getIfAvailable();
+        PlaybackService service = playback.getIfAvailable();
+        if (profiles == null || service == null) {
+            return java.util.Map.of();
+        }
+        try {
+            return profiles.current().map(service::resumableSessionIds).orElse(java.util.Map.of());
+        } catch (RuntimeException error) {
+            log.warn("No se pudo consultar sesiones reanudables del perfil", error);
+            return java.util.Map.of();
+        }
+    }
 }
