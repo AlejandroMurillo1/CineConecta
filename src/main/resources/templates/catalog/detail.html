@@ -27,10 +27,21 @@
                 <dt>Subtítulos</dt>
                 <dd th:text="${#strings.listJoin(content.metadata.subtitleLanguages, ', ')}"></dd>
             </dl>
+            <div class="cat-actions" th:with="isSeries=${content.type.name() == 'SERIES'}">
+                <form th:unless="${isSeries}" th:action="@{/viewing/player}" method="post">
+                    <input type="hidden" name="contentId" th:value="${content.id}">
+                    <button type="submit" class="cc-btn cc-btn-primary">▶ Reproducir</button>
+                </form>
+                <a th:if="${isSeries}" href="#episodios" class="cc-btn cc-btn-primary">▶ Ver episodios</a>
+                <form th:action="@{/viewing/my-list}" method="post">
+                    <input type="hidden" name="contentId" th:value="${content.id}">
+                    <button type="submit" class="cc-btn cc-btn-secondary">+ Mi lista</button>
+                </form>
+            </div>
         </div>
     </article>
 
-    <section class="cc-card cat-section" th:if="${content.details instanceof T(com.cineconecta.platform.catalog.models.SeriesDetails)}">
+    <section id="episodios" class="cc-card cat-section" th:if="${content.details instanceof T(com.cineconecta.platform.catalog.models.SeriesDetails)}">
         <h2>Temporadas y episodios</h2>
         <div th:each="season : ${content.details.seasons}" class="cat-season-block">
             <h3 th:text="${'Temporada ' + season.number}"></h3>
@@ -41,7 +52,15 @@
                         <strong th:text="${episode.number + '. ' + episode.title}"></strong>
                         <span class="cc-muted" th:text="${' — ' + episode.synopsis}"></span>
                     </div>
-                    <small class="cc-muted" th:text="${episode.durationSeconds / 60 + ' min'}"></small>
+                    <div class="cat-episode-actions">
+                        <small class="cc-muted" th:text="${episode.durationSeconds / 60 + ' min'}"></small>
+                        <form th:action="@{/viewing/player}" method="post">
+                            <input type="hidden" name="contentId" th:value="${content.id}">
+                            <input type="hidden" name="episodeId" th:value="${episode.episodeId}">
+                            <button type="submit" class="cc-btn cc-btn-primary cc-btn-sm"
+                                    th:aria-label="${'Reproducir episodio ' + episode.number}">▶ Reproducir</button>
+                        </form>
+                    </div>
                 </li>
             </ol>
         </div>

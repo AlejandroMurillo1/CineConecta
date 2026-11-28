@@ -126,6 +126,11 @@ public class PlaybackService {
         }
     }
 
+    /** Título y episodio de la sesión, para mostrarlos en el reproductor (vacío si ya no está publicado). */
+    public java.util.Optional<PlayableRef> describe(PlaybackSession session) {
+        return catalog.findPlayable(session.contentId(), session.episodeId());
+    }
+
     public int currentPosition(PlaybackSession session) {
         return session.positionAt(clock.instant());
     }

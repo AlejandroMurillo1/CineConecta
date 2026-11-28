@@ -56,17 +56,23 @@ public class PlaybackController {
     @GetMapping("/{sessionId}")
     public String showSession(@PathVariable String sessionId, Model model) {
         PlaybackSession session = playback.find(currentProfile.require().profileId(), sessionId);
+        int position = playback.currentPosition(session);
         model.addAttribute("playbackSession", session);
-        model.addAttribute("position", playback.currentPosition(session));
+        model.addAttribute("position", position);
+        model.addAttribute("positionText", PlaybackTime.format(position));
+        model.addAttribute("durationText", PlaybackTime.format(session.durationSeconds()));
+        model.addAttribute("percent", PlaybackTime.percent(position, session.durationSeconds()));
+        model.addAttribute("playable", playback.describe(session).orElse(null));
         return "viewing/player";
     }
 
     @PostMapping("/{sessionId}")
     public String control(@PathVariable String sessionId,
                           @RequestParam PlaybackSession.Action action,
-                          @RequestParam(required = false) Integer position, RedirectAttributes redirect) {
+                          @RequestParam(required = false) String position, RedirectAttributes redirect) {
         try {
-            playback.apply(currentProfile.require().profileId(), sessionId, action, position);
+            // La posición llega como hh:mm:ss (también se aceptan solo segundos).
+            playback.apply(currentProfile.require().profileId(), sessionId, action, PlaybackTime.parse(position));
         } catch (IllegalArgumentException error) {
             redirect.addFlashAttribute("error", error.getMessage());
         }
