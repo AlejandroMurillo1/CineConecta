@@ -15,8 +15,10 @@ public record ContentSearchFilter(
         @Size(max = 50) String genre,
         @Pattern(regexp = ContentMetadata.LANGUAGE) String audioLanguage,
         @Min(1888) @Max(2100) Integer year,
-        int page,
-        int size
+        // Integer (no int): al abrir /catalog sin parámetros, Spring no puede asignar "nada" a un
+        // primitivo y registraba un error de conversión, que se mostraba como "filtro no válido".
+        Integer page,
+        Integer size
 ) {
     public static final int DEFAULT_SIZE = 20;
     public static final int MAX_SIZE = 50;
@@ -28,8 +30,8 @@ public record ContentSearchFilter(
             genre = genre.toLowerCase(Locale.ROOT);     // los géneros se guardan en minúsculas
         }
         audioLanguage = DtoLists.blankToNull(audioLanguage);
-        page = Math.max(page, 0);
-        size = size <= 0 ? DEFAULT_SIZE : Math.min(size, MAX_SIZE);
+        page = page == null ? 0 : Math.max(page, 0);
+        size = size == null || size <= 0 ? DEFAULT_SIZE : Math.min(size, MAX_SIZE);
     }
 
     /** Sin filtros, primera página. */

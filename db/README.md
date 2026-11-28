@@ -15,7 +15,22 @@ db/
     04_admin.js           administrador inicial
 ```
 
-Los datos de prueba (cuentas, perfiles, suscripciones, catálogo y sesiones) los carga el **seed en Java**; estos scripts solo crean la estructura, los usuarios y el administrador inicial.
+Estos scripts solo crean la estructura, los usuarios y el administrador inicial. Los datos de demostración (cuentas, perfiles, suscripciones, pagos y catálogo) están en `db/demos/` y se cargan aparte; ver el README de la raíz.
+
+### Datos de demostración (`db/demos/postgres/`)
+
+Se ejecutan a mano, después de levantar las bases. Todos son idempotentes y las cuentas usan la contraseña `Demo123*`.
+
+| Script | Contenido |
+|---|---|
+| `01_synthetic_billing.sql` | Cuentas con suscripciones vigentes, vencidas y cambio a plan menor |
+| `05_synthetic_accounts.sql` | Casos de cuentas y perfiles: límite del plan alcanzado, clasificaciones 0-18, perfiles inactivos, suscripción vencida, cuenta recién registrada y correo con mayúsculas (tabla de casos al inicio del script) |
+| `06_volume_accounts.sql` | Volumen para mediciones: N cuentas (`-v cuentas=20000` por defecto) con 1 a 5 perfiles; deterministas |
+
+```bash
+docker compose exec -T postgres psql -U cine -d cineconecta -v ON_ERROR_STOP=1 < db/demos/postgres/05_synthetic_accounts.sql
+docker compose exec -T postgres psql -U cine -d cineconecta -v ON_ERROR_STOP=1 -v cuentas=20000 < db/demos/postgres/06_volume_accounts.sql
+```
 
 ---
 
@@ -28,6 +43,8 @@ docker compose up -d
 ```
 
 La primera vez, cada contenedor ejecuta sus scripts en orden alfabético. **Los scripts solo corren con los volúmenes vacíos**: después de hacer pull de un cambio en `db/`, reinicialice con `docker compose down -v && docker compose up -d`.
+
+Con los puertos por defecto del compose (si los cambia en `.env`, ajuste la conexión):
 
 | Base | Usuario de la aplicación | Conexión |
 |---|---|---|
@@ -64,7 +81,7 @@ Administrador inicial de la aplicación: `admin@cineconecta.local` / `Admin123*`
 | `PLANS.isActive` (columna nueva) | Gestión de planes por el administrador: un plan inactivo no se ofrece en nuevas contrataciones. |
 | Esquema `cineconecta` | Separa los objetos del proyecto de `public` y permite dar permisos por esquema. |
 
-Las tablas, columnas, relaciones e índices únicos del modelo (`ux_accounts_email_ci`, `ux_profiles_name_ci`, `uq_plans_name`, `uq_payments_subscription`, `uq_payments_reference`) se conservan.
+Las tablas, columnas, relaciones e índices únicos del modelo (`ux_accounts_email_ci`, `ux_profiles_name_ci`, `uq_plans_name`, `uq_payments_subscription`, `uq_payments_reference`) se conservan. El inventario completo de objetos (tablas, restricciones, índices, vista, trigger, roles y privilegios) está en [`docs/02_catalogo_objetos_postgres.md`](../docs/02_catalogo_objetos_postgres.md).
 
 ## 4. Reglas del negocio que garantiza cada base
 
@@ -79,7 +96,7 @@ Las tablas, columnas, relaciones e índices únicos del modelo (`ux_accounts_ema
 | Estados `'Y'/'N'`, clasificación 0–18, precio > 0 | `CHECK` |
 | Nada se borra; el historial no se modifica | `cine_app` no tiene DELETE en ninguna tabla, y solo INSERT en `subscriptions` y `payments` |
 | El precio y el máximo de perfiles de un plan no cambian | `cine_app` solo puede actualizar `name` e `isActive` de `plans` |
-| Suscripción vigente | Vista `v_current_subscription` |
+| Suscripción vigente | Calculada con `startsAt <= instante < endsAt` (no se almacena). La aplicación la evalúa desde JPA con su propio reloj; la vista `v_current_subscription` muestra la vigente en este momento para consultas manuales y la demostración |
 
 **MongoDB**
 

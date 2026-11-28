@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{shared/layout :: head('Crear cuenta', ~{})}"></head>
+<body>
+<nav th:replace="~{shared/layout :: navbar('register')}"></nav>
+
+<main id="main" class="cc-container cc-container-narrow">
+    <header class="cc-header cc-fade-in">
+        <h1>Crear cuenta</h1>
+        <p class="cc-muted">Después podrás elegir un plan y crear perfiles.</p>
+    </header>
+
+    <section class="cc-card">
+        <form class="cc-form" th:action="@{/register}" th:object="${form}" method="post" novalidate>
+            <div class="cc-alert cc-alert-danger" role="alert"
+                 th:if="${#fields.hasGlobalErrors()}" th:errors="*{global}">Error</div>
+
+            <div class="cc-field" th:classappend="${#fields.hasErrors('fullName')} ? 'cc-field-error'">
+                <label for="fullName">Nombre completo</label>
+                <input class="cc-input" id="fullName" type="text" th:field="*{fullName}"
+                       autocomplete="name" maxlength="150" required autofocus>
+                <span class="cc-error-text" th:if="${#fields.hasErrors('fullName')}" th:errors="*{fullName}"></span>
+            </div>
+
+            <div class="cc-field" th:classappend="${#fields.hasErrors('email')} ? 'cc-field-error'">
+                <label for="email">Correo electrónico</label>
+                <input class="cc-input" id="email" type="email" th:field="*{email}"
+                       autocomplete="email" maxlength="254" required>
+                <span class="cc-error-text" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></span>
+            </div>
+
+            <div class="cc-field" th:classappend="${#fields.hasErrors('password')} ? 'cc-field-error'">
+                <label for="password">Contraseña</label>
+                <input class="cc-input" id="password" type="password" name="password"
+                       autocomplete="new-password" minlength="8" maxlength="72" required>
+                <span class="cc-hint" th:unless="${#fields.hasErrors('password')}">Entre 8 y 72 caracteres.</span>
+                <span class="cc-error-text" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></span>
+            </div>
+
+            <div class="cc-field" th:classappend="${#fields.hasErrors('passwordConfirmed')} ? 'cc-field-error'">
+                <label for="confirmPassword">Confirmar contraseña</label>
+                <input class="cc-input" id="confirmPassword" type="password" name="confirmPassword"
+                       autocomplete="new-password" required>
+                <span class="cc-error-text" th:if="${#fields.hasErrors('passwordConfirmed')}"
+                      th:errors="*{passwordConfirmed}"></span>
+            </div>
+
+            <button type="submit" class="cc-btn cc-btn-primary">Crear cuenta</button>
+        </form>
+        <p class="cc-hint">¿Ya tienes cuenta? <a th:href="@{/login}">Inicia sesión</a></p>
+    </section>
+</main>
+
+<footer th:replace="~{shared/layout :: footer}"></footer>
+</body>
+</html>

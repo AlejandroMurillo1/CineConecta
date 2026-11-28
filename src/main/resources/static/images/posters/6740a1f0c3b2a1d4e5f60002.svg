@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 600" width="400" height="600" role="img" aria-label="Noche en">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3a0d1e"/>
+      <stop offset="1" stop-color="#0b0b14"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="600" fill="url(#g)"/>
+  <circle cx="270" cy="140" r="70" fill="#f1e4c3" opacity="0.9"/><circle cx="300" cy="120" r="70" fill="#3a0d1e"/><path d="M0 430 L0 330 L50 330 L50 290 L90 290 L90 340 L130 340 L130 250 L150 230 L170 250 L170 340 L220 340 L220 300 L260 300 L260 350 L310 350 L310 280 L350 280 L350 330 L400 330 L400 430 Z" fill="#000" opacity="0.8"/><rect x="140" y="270" width="10" height="14" fill="#f6c453"/><rect x="230" y="315" width="10" height="12" fill="#f6c453"/><rect x="320" y="300" width="10" height="12" fill="#f6c453"/>
+  <rect x="0" y="430" width="400" height="170" fill="#000" opacity="0.35"/>
+  <text x="32" y="500" font-family="Georgia, 'Times New Roman', serif" font-size="38" font-weight="700" fill="#fff">Noche en</text>
+  <text x="32" y="545" font-family="Arial, Helvetica, sans-serif" font-size="18" letter-spacing="4" fill="#fff" opacity="0.8">SAN ANTONIO</text>
+</svg>

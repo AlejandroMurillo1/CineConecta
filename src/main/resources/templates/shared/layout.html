@@ -10,8 +10,10 @@
      Sin hojas propias:  <head th:replace="~{shared/layout :: head('Planes', ~{})}"></head>
 
   2) Navegación de clientes:   <nav th:replace="~{shared/layout :: navbar('plans')}"></nav>
-     Valores de "active": home, profiles, my-list, plans, history.
-     Usa el atributo de modelo opcional "currentProfile" (profileId, name) para "Mi lista" y el chip.
+     Valores de "active": home, catalog, profiles, my-list, plans, history.
+     Orden: Perfiles (primera opción) → Catálogo y Mi lista (solo con perfil en uso) → Planes → Historial.
+     Usa el atributo de modelo opcional "currentProfile" (profileId, name): sin él no se muestran
+     Catálogo ni Mi lista, y el enlace de perfiles dice "Elegir perfil".
 
   3) Mensajes flash (RedirectAttributes "success", "error", "info"):
        <div th:replace="~{shared/layout :: flash}"></div>
@@ -36,12 +38,15 @@
     <a class="cc-brand" th:href="@{/}">Cine<span>Conecta</span></a>
 
     <div class="cc-nav-links">
-        <a th:classappend="${active == 'catalog'} ? 'active'" th:href="@{/catalog}">Catálogo</a>
         <th:block sec:authorize="isAuthenticated()">
-            <a th:if="${currentProfile != null}"
-               th:classappend="${active == 'my-list'} ? 'active'"
-               th:href="@{/viewing/profiles/{id}/my-list(id=${currentProfile.profileId()})}">Mi lista</a>
-            <a th:classappend="${active == 'profiles'} ? 'active'" th:href="@{/profiles}">Perfiles</a>
+            <!--/* Primera opción: elegir o crear perfiles (sin perfil no se puede ver nada). */-->
+            <a th:classappend="${active == 'profiles'} ? 'active'" th:href="@{/profiles}"
+               th:text="${currentProfile == null} ? 'Elegir perfil' : 'Perfiles'">Perfiles</a>
+            <!--/* Catálogo y Mi lista solo con un perfil en uso (verificado en PostgreSQL). */-->
+            <th:block th:if="${currentProfile != null}">
+                <a th:classappend="${active == 'catalog'} ? 'active'" th:href="@{/catalog}">Catálogo</a>
+                <a th:classappend="${active == 'my-list'} ? 'active'" th:href="@{/viewing/my-list}">Mi lista</a>
+            </th:block>
         </th:block>
         <a th:classappend="${active == 'plans'} ? 'active'" th:href="@{/billing/plans}">Planes</a>
         <a sec:authorize="isAuthenticated()"

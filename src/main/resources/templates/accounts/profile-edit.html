@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{shared/layout :: head('Editar perfil', ~{})}"></head>
+<body>
+<nav th:replace="~{shared/layout :: navbar('profiles')}"></nav>
+
+<main id="main" class="cc-container cc-container-narrow">
+    <header class="cc-header">
+        <h1>Editar perfil</h1>
+        <p class="cc-muted" th:text="${profile.name()}">Nombre</p>
+    </header>
+
+    <div th:replace="~{shared/layout :: flash}"></div>
+
+    <section class="cc-card">
+        <form class="cc-form" th:action="@{/profiles/{id}(id=${profile.profileId()})}" th:object="${form}"
+              method="post" novalidate>
+            <div class="cc-field" th:classappend="${#fields.hasErrors('name')} ? 'cc-field-error'">
+                <label for="name">Nombre</label>
+                <input class="cc-input" id="name" type="text" th:field="*{name}" maxlength="60" required autofocus>
+                <span class="cc-error-text" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></span>
+            </div>
+            <div class="cc-field" th:classappend="${#fields.hasErrors('maxAgeRating')} ? 'cc-field-error'">
+                <label for="maxAgeRating">Clasificación máxima</label>
+                <select class="cc-select" id="maxAgeRating" th:field="*{maxAgeRating}">
+                    <option th:each="r : ${ratingOptions}" th:value="${r}"
+                            th:text="${r == 0 ? 'Todo público' : (r >= 18 ? 'Adultos (18+)' : 'Hasta ' + r + ' años')}">0</option>
+                </select>
+                <span class="cc-hint">Solo verá contenidos con esta clasificación o menor.</span>
+                <span class="cc-error-text" th:if="${#fields.hasErrors('maxAgeRating')}" th:errors="*{maxAgeRating}"></span>
+            </div>
+            <div class="cc-actions">
+                <button type="submit" class="cc-btn cc-btn-primary">Guardar</button>
+                <a class="cc-btn cc-btn-secondary" th:href="@{/profiles}">Cancelar</a>
+            </div>
+        </form>
+    </section>
+</main>
+
+<footer th:replace="~{shared/layout :: footer}"></footer>
+</body>
+</html>

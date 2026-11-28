@@ -16,7 +16,8 @@ public record ContentMetadata(
         @NotEmpty List<@Pattern(regexp = ContentMetadata.LANGUAGE) String> audioLanguages,
         List<@Pattern(regexp = ContentMetadata.LANGUAGE) String> subtitleLanguages
 ) {
-    static final String URL = "^https?://\\S+$";
+    /** URL absoluta o ruta servida por la propia aplicación (por ejemplo /images/posters/x.svg). */
+    static final String URL = "^(https?://|/)\\S+$";
     static final String COUNTRY = "^[A-Z]{2}$";
     static final String LANGUAGE = "^[a-z]{2,3}(-[A-Za-z]{2,4})?$";
 

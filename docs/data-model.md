@@ -32,9 +32,9 @@ SUBSCRIPTIONS 1 ── 1 PAYMENTS
 | Columna | Tipo | Nulo | Por defecto | Descripción |
 |---|---|---|---|---|
 | `accountId` | INTEGER | No | identity | Identificador de la cuenta (PK) |
-| `fullName` | VARCHAR(120) | No | | Nombre completo del titular |
+| `fullName` | VARCHAR(150) | No | | Nombre completo del titular |
 | `email` | VARCHAR(254) | No | | Correo de acceso |
-| `passwordHash` | VARCHAR(100) | No | | Hash BCrypt de la contraseña |
+| `passwordHash` | VARCHAR(255) | No | | Hash BCrypt de la contraseña |
 | `createdAt` | TIMESTAMPTZ | No | `now()` | Fecha de registro |
 
 | Restricción / índice | Tipo | Regla |
@@ -48,7 +48,7 @@ SUBSCRIPTIONS 1 ── 1 PAYMENTS
 | Columna | Tipo | Nulo | Por defecto | Descripción |
 |---|---|---|---|---|
 | `planId` | INTEGER | No | identity | Identificador del plan (PK) |
-| `name` | VARCHAR(50) | No | | Nombre del plan |
+| `name` | VARCHAR(60) | No | | Nombre del plan |
 | `price` | NUMERIC(12,2) | No | | Precio en pesos colombianos |
 | `maxProfiles` | INTEGER | No | | Máximo de perfiles activos |
 | `isActive` | CHAR(1) | No | `'Y'` | **Columna nueva.** `'N'` = no se ofrece en nuevas contrataciones |
@@ -69,7 +69,7 @@ SUBSCRIPTIONS 1 ── 1 PAYMENTS
 |---|---|---|---|---|
 | `profileId` | INTEGER | No | identity | Identificador del perfil (PK) |
 | `accountId` | INTEGER | No | | Cuenta a la que pertenece (FK) |
-| `name` | VARCHAR(50) | No | | Nombre del perfil |
+| `name` | VARCHAR(60) | No | | Nombre del perfil |
 | `maxAgeRating` | INTEGER | No | | Clasificación máxima permitida |
 | `isActive` | CHAR(1) | No | `'Y'` | `'N'` = desactivado (conserva su historial) |
 
@@ -114,7 +114,7 @@ La tabla es un historial: la aplicación solo puede insertar, nunca modificar. U
 | `subscriptionId` | INTEGER | No | | Suscripción que respalda (FK) |
 | `paidAt` | TIMESTAMPTZ | No | `now()` | Fecha del pago |
 | `amount` | NUMERIC(12,2) | No | | Monto: copia del precio del plan al pagar |
-| `reference` | VARCHAR(40) | No | | Referencia del pago simulado |
+| `reference` | VARCHAR(100) | No | | Referencia del pago simulado |
 
 | Restricción / índice | Tipo | Regla |
 |---|---|---|
@@ -131,7 +131,7 @@ La tabla es un historial: la aplicación solo puede insertar, nunca modificar. U
 
 | Objeto | Tipo | Propósito |
 |---|---|---|
-| `v_current_subscription` | VIEW | Suscripción vigente de cada cuenta, con el nombre y el máximo de perfiles del plan. La usa la verificación V1 |
+| `v_current_subscription` | VIEW | Suscripción vigente de cada cuenta en este momento, con el nombre y el máximo de perfiles del plan. Auxiliar: para consultas manuales, informes y la demostración; la aplicación aplica la misma condición desde JPA (ver la sección 3) |
 | `fn_subscription_requires_payment()` | FUNCTION (PL/pgSQL) | La ejecuta el trigger diferido |
 | `btree_gist` | EXTENSION | Permite combinar `=` y `&&` en la restricción EXCLUDE |
 
@@ -183,7 +183,7 @@ Un documento por película, serie o documental, con la forma que escribe el mód
 | `synopsis` | string (1–2000) | Sinopsis |
 | `year` | int (1888–2100) | Año de estreno |
 | `ageRating` | int (0–18) | Clasificación por edad |
-| `posterUrl` | string | URL de la portada (`http://` o `https://`) |
+| `posterUrl` | string | URL de la portada: absoluta (`http://` o `https://`) o ruta servida por la aplicación (`/images/posters/...`) |
 | `genres` | array de string (≥ 1) | Géneros, sin repetidos |
 | `countries` | array de string (≥ 1) | Países de producción, código ISO de 2 letras (`CO`) |
 | `audioLanguages` | array de string (≥ 1) | Idiomas de audio, código de idioma (`es`, `en`, `pt-BR`) |
@@ -236,7 +236,7 @@ Los índices de género e idioma van separados porque MongoDB no permite dos arr
   "synopsis": "Una familia de pescadores del Magdalena enfrenta el cierre del puerto.",
   "year": 2024,
   "ageRating": 13,
-  "posterUrl": "https://cdn.cineconecta.local/covers/rio-abajo.jpg",
+  "posterUrl": "/images/posters/6740a1f0c3b2a1d4e5f60001.svg",
   "genres": ["Drama"],
   "countries": ["CO"],
   "audioLanguages": ["es"],
@@ -317,13 +317,13 @@ Un documento por sesión. Es un historial: una sesión cerrada no se modifica. E
 | `playingSince` | date o null | No | Interno: inicio del tramo en reproducción; `null` en pausa |
 | `watchedSeconds` | int ≥ 0 | Sí | Tiempo realmente visto, sin los saltos de "avanzar" |
 | `lastPosition` | int ≥ 0 | Sí | Última posición alcanzada |
-| `finished` | bool | Sí | El usuario la finalizó con el control "finalizar" |
+| `finished` | bool | Sí | El reproductor la finalizó al llegar al final del contenido (no hay botón de finalizar) |
 
 **Datos copiados.** `contentType`, `durationSeconds` y `planIdAtStart` son fotos inmutables del momento de inicio. No pueden quedar inconsistentes porque registran un hecho histórico, y permiten calcular los informes sin consultar el catálogo ni PostgreSQL por cada sesión.
 
 **Informe de consumo.** `ConsumptionApi.byPlanAndType` selecciona las sesiones iniciadas en el intervalo `[inicio, fin)`. Suma los segundos vistos y cuenta una sola vez cada perfil dentro de cada plan y tipo. El plan usado es `planIdAtStart`. Los segundos se convierten a minutos con dos decimales después de sumar. El módulo de informes puede consultar en PostgreSQL el nombre de cada plan.
 
-**Completado** (calculado, no se guarda): `finished = true` o `lastPosition ≥ 90 %` de `durationSeconds`.
+**Completado** (calculado, no se guarda): `finished = true` o `lastPosition ≥ 90 %` de `durationSeconds`. Lo completado sale de "Continuar viendo" y se marca como "✓ Visto" en el catálogo, con la opción de volver a verlo desde el inicio (una sesión nueva).
 
 | Índice | Campos | Consulta |
 |---|---|---|
@@ -394,10 +394,10 @@ Como `cineApp` solo puede leer `admin_users`, la aplicación no puede crear admi
 |---|---|---|---|
 | `accountId` | `accounts` | `playback_sessions` | Se toma del usuario autenticado |
 | `profileId` | `profiles` | `_id` de `my_lists`, `playback_sessions` | Verificación V1 en PostgreSQL antes de escribir: el perfil existe, está activo y pertenece a la cuenta |
-| `planIdAtStart` | `subscriptions` (vía `v_current_subscription`) | `playback_sessions` | Se lee de la suscripción vigente al iniciar la sesión |
+| `planIdAtStart` | `subscriptions` | `playback_sessions` | Se lee de la suscripción vigente en el instante de inicio de la sesión (`SubscriptionApi.planAt`, que consulta `subscriptions` con JPA) |
 | `contentId` | `contents` | `my_lists`, `playback_sessions` | La aplicación lo resuelve contra `contents`; nunca se borra ni se reutiliza |
 | `episodeId` | `contents.contentDetails.seasons.episodes` | `playback_sessions` | La aplicación lo resuelve contra `contents` |
 
 **Verificación V1** (antes de buscar, agregar a "Mi lista" o iniciar una reproducción):
-1. En PostgreSQL: el perfil está activo y pertenece a la cuenta autenticada, y la cuenta tiene una suscripción vigente (`v_current_subscription`).
+1. En PostgreSQL: el perfil está activo y pertenece a la cuenta autenticada, y la cuenta tiene una suscripción vigente (`SubscriptionApi.current`, que aplica `startsAt <= ahora < endsAt` sobre `subscriptions` con el reloj de la aplicación).
 2. En MongoDB: el contenido está publicado (`PUBLISHED`) y su `ageRating` es menor o igual al `maxAgeRating` del perfil.

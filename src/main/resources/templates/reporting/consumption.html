@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consumo por plan — Administración CineConecta</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="stylesheet" th:href="@{/css/backoffice.css}">
+    <link rel="stylesheet" th:href="@{/css/reporting.css}">
+</head>
+<body>
+<nav th:replace="~{backoffice/fragments/admin-nav :: nav('consumption')}"></nav>
+
+<main class="cc-container">
+    <header class="cc-header">
+        <h1>Consumo por plan</h1>
+        <p class="cc-muted">Minutos reproducidos y perfiles distintos por plan y tipo de contenido, según las sesiones
+            iniciadas en el período. El plan es el que tenía la cuenta al iniciar cada sesión.
+            Las fechas se interpretan en hora de Colombia e incluyen el día inicial y el final.</p>
+    </header>
+
+    <form class="cc-card rp-filters" method="get" th:action="@{/admin/reports/consumption}">
+        <label>Desde
+            <input type="date" name="from" th:value="${from}" required>
+        </label>
+        <label>Hasta
+            <input type="date" name="to" th:value="${to}" required>
+        </label>
+        <button type="submit" class="cc-btn cc-btn-primary">Consultar</button>
+        <a th:if="${report != null}"
+           th:href="@{/admin/reports/consumption.csv(from=${from}, to=${to})}"
+           class="cc-btn cc-btn-secondary">Exportar CSV</a>
+    </form>
+
+    <div th:if="${errorMessage != null}" class="cc-alert cc-alert-warning" th:text="${errorMessage}">Aviso</div>
+
+    <div th:if="${report != null and !report.hasData()}" class="cc-alert cc-alert-info">
+        No hay reproducciones registradas en este período.
+    </div>
+
+    <table class="cc-table" th:if="${report != null and report.hasData()}">
+        <thead>
+        <tr>
+            <th>Plan</th>
+            <th>Tipo de contenido</th>
+            <th class="rp-num">Minutos consumidos</th>
+            <th class="rp-num">Perfiles distintos</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="row : ${report.rows()}">
+            <td th:text="${row.planName()}">Estándar</td>
+            <td th:text="${row.typeLabel()}">Película</td>
+            <td class="rp-num" th:text="${#numbers.formatDecimal(row.minutes(), 1, 'POINT', 2, 'COMMA')}">0,00</td>
+            <td class="rp-num" th:text="${row.distinctProfiles()}">0</td>
+        </tr>
+        </tbody>
+        <tfoot>
+        <tr class="rp-total">
+            <td colspan="2">Total</td>
+            <td class="rp-num" th:text="${#numbers.formatDecimal(report.totalMinutes(), 1, 'POINT', 2, 'COMMA')}">0,00</td>
+            <td class="rp-num cc-muted" title="Un perfil puede aparecer en varias filas, así que no se suman">—</td>
+        </tr>
+        </tfoot>
+    </table>
+</main>
+</body>
+</html>

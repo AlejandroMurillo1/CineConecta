@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 600" width="400" height="600" role="img" aria-label="CineConecta">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#273549"/>
+      <stop offset="1" stop-color="#0f172a"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="600" fill="url(#g)"/>
+  <g fill="none" stroke="#94a3b8" stroke-width="10" opacity="0.6"><rect x="120" y="170" width="160" height="120" rx="10"/><path d="M185 205 L235 230 L185 255 Z" fill="#94a3b8"/></g>
+  <rect x="0" y="430" width="400" height="170" fill="#000" opacity="0.35"/>
+  <text x="32" y="500" font-family="Georgia, 'Times New Roman', serif" font-size="38" font-weight="700" fill="#fff">CineConecta</text>
+  <text x="32" y="545" font-family="Arial, Helvetica, sans-serif" font-size="18" letter-spacing="4" fill="#fff" opacity="0.8">SIN IMAGEN</text>
+</svg>

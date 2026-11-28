@@ -34,7 +34,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 @WebMvcTest(BillingController.class)
-@Import(com.cineconecta.platform.shared.config.SharedConfig.class)
+@Import({com.cineconecta.platform.shared.config.SharedConfig.class,
+        com.cineconecta.platform.shared.PermitAllSecurityTestConfig.class})
 class BillingWebMvcTest {
 
     private static final Instant NOW = Instant.parse("2026-11-25T15:00:00Z");
@@ -68,7 +69,8 @@ class BillingWebMvcTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("billing/plans"))
                 .andExpect(content().string(containsString("Básico")))
-                .andExpect(content().string(containsString("Debes reducir tus perfiles activos")));
+                .andExpect(content().string(containsString("Debes reducir tus perfiles activos")))
+                .andExpect(content().string(containsString("href=\"/profiles\"")));
     }
 
     @Test
@@ -94,7 +96,8 @@ class BillingWebMvcTest {
                         .param("paymentMode", "APPROVED"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("Suscripción activada con éxito")))
-                .andExpect(content().string(containsString("SIM-1-ABCDEF")));
+                .andExpect(content().string(containsString("SIM-1-ABCDEF")))
+                .andExpect(content().string(containsString("Crear o elegir perfiles")));
 
         when(checkoutService.purchaseSubscription(7, 1, PaymentSimulationMode.REJECTED))
                 .thenThrow(new PaymentRejectedException("fondos insuficientes"));
